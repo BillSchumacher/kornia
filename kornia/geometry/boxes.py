@@ -19,13 +19,12 @@ def _merge_box_list(boxes: List[torch.Tensor], method: str = "pad") -> Tuple[tor
     if not all(box.shape[-2:] == torch.Size([4, 2]) and box.dim() == 3 for box in boxes):
         raise TypeError(f"Input boxes must be a list of (N, 4, 2) shaped. Got: {[box.shape for box in boxes]}.")
 
-    if method == "pad":
-        max_N = max(box.shape[0] for box in boxes)
-        stats = [max_N - box.shape[0] for box in boxes]
-        output = torch.nn.utils.rnn.pad_sequence(boxes, batch_first=True)
-    else:
+    if method != "pad":
         raise NotImplementedError(f"`{method}` is not implemented.")
 
+    max_N = max(box.shape[0] for box in boxes)
+    stats = [max_N - box.shape[0] for box in boxes]
+    output = torch.nn.utils.rnn.pad_sequence(boxes, batch_first=True)
     return output, stats
 
 
@@ -160,8 +159,7 @@ def _boxes3d_to_polygons3d(
     back_vertices = front_vertices.clone()
     back_vertices[..., 2] += depth.unsqueeze(-1) - 1
 
-    polygons3d = torch.cat([front_vertices, back_vertices], dim=-2)
-    return polygons3d
+    return torch.cat([front_vertices, back_vertices], dim=-2)
 
 
 # @torch.jit.script
@@ -212,7 +210,7 @@ class Boxes:
         if not (3 <= boxes.ndim <= 4 and boxes.shape[-2:] == (4, 2)):
             raise ValueError(f"Boxes shape must be (N, 4, 2) or (B, N, 4, 2). Got {boxes.shape}.")
 
-        self._is_batched = False if boxes.ndim == 3 else True
+        self._is_batched = boxes.ndim != 3
 
         self._data = boxes
         self._mode = mode
@@ -269,11 +267,7 @@ class Boxes:
     def index_put(
         self, indices: Union[Tuple[Tensor, ...], List[Tensor]], values: Union[Tensor, "Boxes"], inplace: bool = False
     ) -> "Boxes":
-        if inplace:
-            _data = self._data
-        else:
-            _data = self._data.clone()
-
+        _data = self._data if inplace else self._data.clone()
         if isinstance(values, Boxes):
             _data.index_put_(indices, values.data)
         else:
@@ -292,7 +286,7 @@ class Boxes:
         Args:
             padding_size: (B, 4)
         """
-        if not (len(padding_size.shape) == 2 and padding_size.size(1) == 4):
+        if len(padding_size.shape) != 2 or padding_size.size(1) != 4:
             raise RuntimeError(f"Expected padding_size as (B, 4). Got {padding_size.shape}.")
         self._data[..., 0] += padding_size[..., None, :1].to(device=self._data.device)  # left padding
         self._data[..., 1] += padding_size[..., None, 2:3].to(device=self._data.device)  # top padding
@@ -304,7 +298,7 @@ class Boxes:
         Args:
             padding_size: (B, 4)
         """
-        if not (len(padding_size.shape) == 2 and padding_size.size(1) == 4):
+        if len(padding_size.shape) != 2 or padding_size.size(1) != 4:
             raise RuntimeError(f"Expected padding_size as (B, 4). Got {padding_size.shape}.")
         self._data[..., 0] -= padding_size[..., None, :1].to(device=self._data.device)  # left padding
         self._data[..., 1] -= padding_size[..., None, 2:3].to(device=self._data.device)  # top padding
@@ -319,10 +313,7 @@ class Boxes:
         """"""
         if not (isinstance(topleft, Tensor) and isinstance(botright, Tensor)):
             raise NotImplementedError
-        if inplace:
-            _data = self._data
-        else:
-            _data = self._data.clone()
+        _data = self._data if inplace else self._data.clone()
         topleft_x = topleft[:, None, :1].repeat(1, _data.size(1), 4)
         _data[..., 0][_data[..., 0] < topleft_x] = topleft_x[_data[..., 0] < topleft_x]
 
@@ -375,10 +366,7 @@ class Boxes:
         self, min_area: Optional[float] = None, max_area: Optional[float] = None, inplace: bool = False
     ) -> "Boxes":
         area = self.compute_area()
-        if inplace:
-            _data = self._data
-        else:
-            _data = self._data.clone()
+        _data = self._data if inplace else self._data.clone()
         if min_area is not None:
             _data[area < min_area] = 0.0
         if max_area is not None:
@@ -516,9 +504,10 @@ class Boxes:
             boxes = _boxes_to_polygons(boxes[..., 0], boxes[..., 1], boxes[..., 2], boxes[..., 3])
 
         if self._N is not None and not as_padded_sequence:
-            boxes = list(
-                torch.nn.functional.pad(o, (len(o.shape) - 1) * [0, 0] + [0, -n]) for o, n in zip(boxes, self._N)
-            )
+            boxes = [
+                torch.nn.functional.pad(o, (len(o.shape) - 1) * [0, 0] + [0, -n])
+                for o, n in zip(boxes, self._N)
+            ]
         else:
             boxes = boxes if self._is_batched else boxes.squeeze(0)
         return boxes
@@ -615,11 +604,7 @@ class Boxes:
         Returns:
             The transformed boxes.
         """
-        if method == "fast":
-            raise NotImplementedError
-        elif method == "warp":
-            pass
-        else:
+        if method != "warp":
             raise NotImplementedError
 
         M: Tensor = eye_like(3, size)
@@ -742,7 +727,7 @@ class Boxes3D:
         if not (3 <= boxes.ndim <= 4 and boxes.shape[-2:] == (8, 3)):
             raise ValueError(f"3D bbox shape must be (N, 8, 3) or (B, N, 8, 3). Got {boxes.shape}.")
 
-        self._is_batched = False if boxes.ndim == 3 else True
+        self._is_batched = boxes.ndim != 3
 
         self._data = boxes
         self._mode = mode
@@ -909,9 +894,9 @@ class Boxes3D:
         )
 
         mode = mode.lower()
-        if mode in ("xyzxyz", "xyzxyz_plus"):
+        if mode in {"xyzxyz", "xyzxyz_plus"}:
             pass
-        elif mode in ("xyzwhd", "vertices", "vertices_plus"):
+        elif mode in {"xyzwhd", "vertices", "vertices_plus"}:
             width = boxes[..., 3] - boxes[..., 0] + 1
             height = boxes[..., 4] - boxes[..., 1] + 1
             depth = boxes[..., 5] - boxes[..., 2] + 1
@@ -921,7 +906,7 @@ class Boxes3D:
         else:
             raise ValueError(f"Unknown mode {mode}")
 
-        if mode in ("xyzxyz", "vertices"):
+        if mode in {"xyzxyz", "vertices"}:
             offset = torch.as_tensor([0, 0, 0, 1, 1, 1], device=boxes.device, dtype=boxes.dtype)
             boxes = boxes + offset
 

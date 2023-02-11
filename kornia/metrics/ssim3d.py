@@ -84,9 +84,6 @@ def ssim3d(
         cropping_shape = _compute_padding([depth, height, width])
         mu1 = _crop(mu1, cropping_shape)
         mu2 = _crop(mu2, cropping_shape)
-    elif padding == 'same':
-        pass
-
     mu1_sq = mu1**2
     mu2_sq = mu2**2
     mu1_mu2 = mu1 * mu2
@@ -99,9 +96,6 @@ def ssim3d(
         mu_img1_sq = _crop(mu_img1_sq, cropping_shape)
         mu_img2_sq = _crop(mu_img2_sq, cropping_shape)
         mu_img1_img2 = _crop(mu_img1_img2, cropping_shape)
-    elif padding == 'same':
-        pass
-
     # compute local sigma per channel
     sigma1_sq = mu_img1_sq - mu1_sq
     sigma2_sq = mu_img2_sq - mu2_sq

@@ -69,10 +69,10 @@ def elastic_transform2d(
     if not isinstance(noise, torch.Tensor):
         raise TypeError(f"Input noise is not torch.Tensor. Got {type(noise)}")
 
-    if not len(image.shape) == 4:
+    if len(image.shape) != 4:
         raise ValueError(f"Invalid image shape, we expect BxCxHxW. Got: {image.shape}")
 
-    if not len(noise.shape) == 4 or noise.shape[1] != 2:
+    if len(noise.shape) != 4 or noise.shape[1] != 2:
         raise ValueError(f"Invalid noise shape, we expect Bx2xHxW. Got: {noise.shape}")
 
     device, dtype = image.device, image.dtype
@@ -98,8 +98,10 @@ def elastic_transform2d(
     # Warp image based on displacement matrix
     _, _, h, w = image.shape
     grid = create_meshgrid(h, w, device=image.device).to(image.dtype)
-    warped = F.grid_sample(
-        image, (grid + disp).clamp(-1, 1), align_corners=align_corners, mode=mode, padding_mode=padding_mode
+    return F.grid_sample(
+        image,
+        (grid + disp).clamp(-1, 1),
+        align_corners=align_corners,
+        mode=mode,
+        padding_mode=padding_mode,
     )
-
-    return warped

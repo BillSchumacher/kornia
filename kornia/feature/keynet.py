@@ -46,8 +46,7 @@ class _FeatureExtractor(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x_hc = self.hc_block(x)
-        x_lb = self.lb_block(x_hc)
-        return x_lb
+        return self.lb_block(x_hc)
 
 
 class _HandcraftedBlock(Module):
@@ -67,9 +66,21 @@ class _HandcraftedBlock(Module):
         sobel_dy = self.spatial_gradient(dy)
         dyy = sobel_dy[:, :, 1, :, :]
 
-        hc_feats = concatenate([dx, dy, dx**2.0, dy**2.0, dx * dy, dxy, dxy**2.0, dxx, dyy, dxx * dyy], 1)
-
-        return hc_feats
+        return concatenate(
+            [
+                dx,
+                dy,
+                dx**2.0,
+                dy**2.0,
+                dx * dy,
+                dxy,
+                dxy**2.0,
+                dxx,
+                dyy,
+                dxx * dyy,
+            ],
+            1,
+        )
 
 
 class _LearnableBlock(nn.Sequential):
@@ -153,13 +164,12 @@ class KeyNet(Module):
         """
         shape_im = x.shape
         feats: List[Tensor] = [self.feature_extractor(x)]
-        for i in range(1, self.num_levels):
+        for _ in range(1, self.num_levels):
             x = pyrdown(x, factor=1.2)
             feats_i = self.feature_extractor(x)
             feats_i = F.interpolate(feats_i, size=(shape_im[2], shape_im[3]), mode='bilinear')
             feats.append(feats_i)
-        scores = self.last_conv(concatenate(feats, 1))
-        return scores
+        return self.last_conv(concatenate(feats, 1))
 
 
 class KeyNetDetector(MultiResolutionDetector):

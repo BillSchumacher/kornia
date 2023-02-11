@@ -338,18 +338,17 @@ def crop_by_indices(
     # Find out the cropped shapes that need to be resized.
     for i, _ in enumerate(out):
         _out = input_tensor[i : i + 1, :, int(y1[i]) : int(y2[i]), int(x1[i]) : int(x2[i])]
-        if _out.shape[-2:] != size:
-            if shape_compensation == "resize":
-                out[i] = resize(
-                    _out,
-                    size,
-                    interpolation=interpolation,
-                    align_corners=align_corners,
-                    side="short",
-                    antialias=antialias,
-                )
-            else:
-                out[i] = pad(_out, [0, size[1] - _out.shape[-1], 0, size[0] - _out.shape[-2]])
-        else:
+        if _out.shape[-2:] == size:
             out[i] = _out
+        elif shape_compensation == "resize":
+            out[i] = resize(
+                _out,
+                size,
+                interpolation=interpolation,
+                align_corners=align_corners,
+                side="short",
+                antialias=antialias,
+            )
+        else:
+            out[i] = pad(_out, [0, size[1] - _out.shape[-1], 0, size[0] - _out.shape[-2]])
     return out

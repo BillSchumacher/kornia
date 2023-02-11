@@ -32,15 +32,14 @@ class PosterizeGenerator(RandomGeneratorBase):
         self.bits = bits
 
     def __repr__(self) -> str:
-        repr = f"bits={self.bits}"
-        return repr
+        return f"bits={self.bits}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         bits = as_tensor(self.bits, device=device, dtype=dtype)
         if len(bits.size()) == 0:
             bits = bits.repeat(2)
             bits[1] = 8
-        elif not (len(bits.size()) == 1 and bits.size(0) == 2):
+        elif len(bits.size()) != 1 or bits.size(0) != 2:
             raise ValueError(f"'bits' shall be either a scalar or a length 2 tensor. Got {bits}.")
         _joint_range_check(bits, 'bits', (0, 8))
         self.bit_sampler = Uniform(bits[0], bits[1], validate_args=False)

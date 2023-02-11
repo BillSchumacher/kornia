@@ -88,8 +88,7 @@ def get_motion_kernel2d(
     # rotate (counterclockwise) kernel by given angle
     kernel = rotate(kernel, angle, mode=mode, align_corners=True)
     kernel = kernel[:, 0]
-    kernel = kernel / kernel.sum(dim=(1, 2), keepdim=True)
-    return kernel
+    return kernel / kernel.sum(dim=(1, 2), keepdim=True)
 
 
 def get_motion_kernel3d(
@@ -183,6 +182,4 @@ def get_motion_kernel3d(
     # rotate (counterclockwise) kernel by given angle
     kernel = rotate3d(kernel, angle[:, 0], angle[:, 1], angle[:, 2], mode=mode, align_corners=True)
     kernel = kernel[:, 0]
-    kernel = kernel / kernel.sum(dim=(1, 2, 3), keepdim=True)
-
-    return kernel
+    return kernel / kernel.sum(dim=(1, 2, 3), keepdim=True)

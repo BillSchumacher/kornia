@@ -45,7 +45,7 @@ class TestColorJiggleBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=10)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -100,7 +100,7 @@ class TestColorJitterBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=10)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -174,7 +174,7 @@ class TestRandomAffineBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=10)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -252,7 +252,7 @@ class TestRandomRotationBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=10)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -293,7 +293,7 @@ class TestRandomPerspectiveBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=0.1)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -342,7 +342,7 @@ class TestRandomMotionBlurBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=0.1)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -388,7 +388,7 @@ class TestRandomSharpnessBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=0.1)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -424,7 +424,7 @@ class TestRandomResizedCropBackward:
 
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=0.1)
             loss = mse(output, torch.ones_like(output) * 2)
@@ -460,7 +460,7 @@ class TestRandomErasingBackward:
         aug = RandomErasing(_scale, _ratio, value, same_on_batch)
         output = aug(input)
 
-        if len(list(aug.parameters())) != 0:
+        if list(aug.parameters()):
             mse = nn.MSELoss()
             opt = torch.optim.SGD(aug.parameters(), lr=0.1)
             loss = mse(output, torch.ones_like(output) * 2)

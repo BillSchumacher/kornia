@@ -64,13 +64,14 @@ class ImageStitcher(Module):
 
     def estimate_transform(self, **kwargs) -> Tensor:
         """Compute the corresponding homography."""
-        homos: List[Tensor] = []
         kp1, kp2, idx = kwargs['keypoints0'], kwargs['keypoints1'], kwargs['batch_indexes']
-        for i in range(len(idx.unique())):
-            homos.append(self._estimate_homography(kp1[idx == i], kp2[idx == i]))
-        if len(homos) == 0:
+        if homos := [
+            self._estimate_homography(kp1[idx == i], kp2[idx == i])
+            for i in range(len(idx.unique()))
+        ]:
+            return concatenate(homos)
+        else:
             raise RuntimeError("Compute homography failed. No matched keypoints found.")
-        return concatenate(homos)
 
     def blend_image(self, src_img: Tensor, dst_img: Tensor, mask: Tensor) -> Tensor:
         """Blend two images together."""
@@ -84,7 +85,7 @@ class ImageStitcher(Module):
     def preprocess(self, image_1: Tensor, image_2: Tensor) -> Dict[str, Tensor]:
         """Preprocess input to the required format."""
         # TODO: probably perform histogram matching here.
-        if isinstance(self.matcher, LoFTR) or isinstance(self.matcher, LocalFeatureMatcher):
+        if isinstance(self.matcher, (LoFTR, LocalFeatureMatcher)):
             input_dict: Dict[str, Tensor] = {  # LofTR works on grayscale images only
                 "image0": rgb_to_grayscale(image_1),
                 "image1": rgb_to_grayscale(image_2),
@@ -97,9 +98,7 @@ class ImageStitcher(Module):
         # NOTE: assumes no batch mode. This method keeps all valid regions after stitching.
         mask_ = mask.sum((0, 1))
         index = int(mask_.bool().any(0).long().argmin().item())
-        if index == 0:  # If no redundant space
-            return image
-        return image[..., :index]
+        return image if index == 0 else image[..., :index]
 
     def on_matcher(self, data) -> Dict[str, Tensor]:
         return self.matcher(data)

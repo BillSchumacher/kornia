@@ -49,13 +49,13 @@ def dice_loss(input: torch.Tensor, target: torch.Tensor, eps: float = 1e-8) -> t
     if not isinstance(input, torch.Tensor):
         raise TypeError(f"Input type is not a torch.Tensor. Got {type(input)}")
 
-    if not len(input.shape) == 4:
+    if len(input.shape) != 4:
         raise ValueError(f"Invalid input shape, we expect BxNxHxW. Got: {input.shape}")
 
-    if not input.shape[-2:] == target.shape[-2:]:
+    if input.shape[-2:] != target.shape[-2:]:
         raise ValueError(f"input and target shapes must be the same. Got: {input.shape} and {target.shape}")
 
-    if not input.device == target.device:
+    if input.device != target.device:
         raise ValueError(f"input and target must be in the same device. Got: {input.device} and {target.device}")
 
     # compute softmax over the classes axis

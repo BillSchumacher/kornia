@@ -271,7 +271,9 @@ def rotate(
         raise TypeError(f"Input center type is not a torch.Tensor. Got {type(center)}")
 
     if len(tensor.shape) not in (3, 4):
-        raise ValueError("Invalid tensor shape, we expect CxHxW or BxCxHxW. " "Got: {}".format(tensor.shape))
+        raise ValueError(
+            f"Invalid tensor shape, we expect CxHxW or BxCxHxW. Got: {tensor.shape}"
+        )
 
     # compute the rotation center
     if center is None:
@@ -335,7 +337,9 @@ def rotate3d(
         raise TypeError(f"Input center type is not a torch.Tensor. Got {type(center)}")
 
     if len(tensor.shape) not in (4, 5):
-        raise ValueError("Invalid tensor shape, we expect CxDxHxW or BxCxDxHxW. " "Got: {}".format(tensor.shape))
+        raise ValueError(
+            f"Invalid tensor shape, we expect CxDxHxW or BxCxDxHxW. Got: {tensor.shape}"
+        )
 
     # compute the rotation center
     if center is None:
@@ -392,7 +396,9 @@ def translate(
         raise TypeError(f"Input translation type is not a torch.Tensor. Got {type(translation)}")
 
     if len(tensor.shape) not in (3, 4):
-        raise ValueError("Invalid tensor shape, we expect CxHxW or BxCxHxW. " "Got: {}".format(tensor.shape))
+        raise ValueError(
+            f"Invalid tensor shape, we expect CxHxW or BxCxHxW. Got: {tensor.shape}"
+        )
 
     # compute the translation matrix
     translation_matrix: torch.Tensor = _compute_translation_matrix(translation)
@@ -501,7 +507,9 @@ def shear(
         raise TypeError(f"Input shear type is not a torch.Tensor. Got {type(shear)}")
 
     if len(tensor.shape) not in (3, 4):
-        raise ValueError("Invalid tensor shape, we expect CxHxW or BxCxHxW. " "Got: {}".format(tensor.shape))
+        raise ValueError(
+            f"Invalid tensor shape, we expect CxHxW or BxCxHxW. Got: {tensor.shape}"
+        )
 
     # compute the translation matrix
     shear_matrix: torch.Tensor = _compute_shear_matrix(shear)
@@ -597,8 +605,9 @@ def resize(
 
         input = gaussian_blur2d(input, ks, sigmas)
 
-    output = torch.nn.functional.interpolate(input, size=size, mode=interpolation, align_corners=align_corners)
-    return output
+    return torch.nn.functional.interpolate(
+        input, size=size, mode=interpolation, align_corners=align_corners
+    )
 
 
 def rescale(
@@ -754,7 +763,7 @@ class Affine(nn.Module):
             raise RuntimeError(msg)
 
         batch_size = batch_sizes[0]
-        if not all(other == batch_size for other in batch_sizes[1:]):
+        if any(other != batch_size for other in batch_sizes[1:]):
             raise RuntimeError(f"The batch sizes of the affine parameters mismatch: {batch_sizes}")
 
         self._batch_size = batch_size

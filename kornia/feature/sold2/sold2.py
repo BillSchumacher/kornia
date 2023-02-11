@@ -11,10 +11,9 @@ from kornia.utils import map_location_to_cpu
 from .backbones import SOLD2Net
 from .sold2_detector import LineSegmentDetectionModule, line_map_to_segments, prob_to_junctions
 
-urls: Dict[str, str] = {}
-urls["wireframe"] = "http://cmp.felk.cvut.cz/~mishkdmy/models/sold2_wireframe.pth"
-
-
+urls: Dict[str, str] = {
+    "wireframe": "http://cmp.felk.cvut.cz/~mishkdmy/models/sold2_wireframe.pth"
+}
 default_cfg: Dict[str, Any] = {
     'backbone_cfg': {'input_channel': 1, 'depth': 4, 'num_stacks': 2, 'num_blocks': 1, 'num_classes': 5},
     'use_descriptor': True,
@@ -110,14 +109,13 @@ class SOLD2(Module):
             - ``dense_desc``: the semi-dense descriptor map of shape :math:`(B, 128, H/4, W/4)`.
         """
         KORNIA_CHECK_SHAPE(img, ["B", "1", "H", "W"])
-        outputs = {}
-
         # Forward pass of the CNN backbone
         net_outputs = self.model(img)
-        outputs["junction_heatmap"] = net_outputs["junctions"]
-        outputs["line_heatmap"] = net_outputs["heatmap"]
-        outputs["dense_desc"] = net_outputs["descriptors"]
-
+        outputs = {
+            "junction_heatmap": net_outputs["junctions"],
+            "line_heatmap": net_outputs["heatmap"],
+            "dense_desc": net_outputs["descriptors"],
+        }
         # Loop through all images
         lines = []
         for junc_prob, heatmap in zip(net_outputs["junctions"], net_outputs["heatmap"]):

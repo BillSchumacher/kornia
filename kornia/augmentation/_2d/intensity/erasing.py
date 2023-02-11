@@ -77,8 +77,7 @@ class RandomErasing(IntensityAugmentationBase2D):
         bboxes = bbox_generator(params["xs"], params["ys"], params["widths"], params["heights"])
         mask = bbox_to_mask(bboxes, w, h)  # Returns B, H, W
         mask = mask.unsqueeze(1).repeat(1, c, 1, 1).to(input)  # Transform to B, c, H, W
-        transformed = where(mask == 1.0, values, input)
-        return transformed
+        return where(mask == 1.0, values, input)
 
     def apply_transform_mask(
         self, input: Tensor, params: Dict[str, Tensor], flags: Dict[str, Any], transform: Optional[Tensor] = None
@@ -92,5 +91,4 @@ class RandomErasing(IntensityAugmentationBase2D):
         bboxes = bbox_generator(params["xs"], params["ys"], params["widths"], params["heights"])
         mask = bbox_to_mask(bboxes, w, h)  # Returns B, H, W
         mask = mask.unsqueeze(1).repeat(1, c, 1, 1).to(input)  # Transform to B, c, H, W
-        transformed = where(mask == 1.0, values, input)
-        return transformed
+        return where(mask == 1.0, values, input)

@@ -79,7 +79,7 @@ class SequentialBase(nn.Sequential):
                 path or resolves to something that is not an
                 ``Module``
         """
-        if target == "":
+        if not target:
             return self
 
         atoms: List[str] = target.split(".")
@@ -87,12 +87,12 @@ class SequentialBase(nn.Sequential):
 
         for item in atoms:
             if not hasattr(mod, item):
-                raise AttributeError(mod._get_name() + " has no " "attribute `" + item + "`")
+                raise AttributeError(f"{mod._get_name()} has no attribute `{item}`")
 
             mod = getattr(mod, item)
 
             if not isinstance(mod, Module):
-                raise AttributeError("`" + item + "` is not " "an Module")
+                raise AttributeError(f"`{item}` is not an Module")
 
         return mod
 

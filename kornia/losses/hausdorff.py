@@ -76,7 +76,7 @@ class _HausdorffERLossBase(torch.jit.ScriptModule):
         return eroded
 
     # NOTE: we add type ignore because the forward pass does not work well with subclassing
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:  # type: ignore[override]
+    def forward(self, pred: Tensor, target: Tensor) -> Tensor:    # type: ignore[override]
         """Compute Hausdorff loss.
 
         Args:
@@ -87,7 +87,11 @@ class _HausdorffERLossBase(torch.jit.ScriptModule):
         Returns:
             Estimated Hausdorff Loss.
         """
-        if not (pred.shape[2:] == target.shape[2:] and pred.size(0) == target.size(0) and target.size(1) == 1):
+        if (
+            pred.shape[2:] != target.shape[2:]
+            or pred.size(0) != target.size(0)
+            or target.size(1) != 1
+        ):
             raise ValueError(
                 "Prediction and target need to be of same size, and target should not be one-hot."
                 f"Got {pred.shape} and {target.shape}."
@@ -114,9 +118,7 @@ class _HausdorffERLossBase(torch.jit.ScriptModule):
             out = out.mean()
         elif self.reduction == 'sum':
             out = out.sum()
-        elif self.reduction == 'none':
-            pass
-        else:
+        elif self.reduction != 'none':
             raise NotImplementedError(f"reduction `{self.reduction}` has not been implemented yet.")
 
         return out
@@ -168,7 +170,7 @@ class HausdorffERLoss(_HausdorffERLossBase):
         return kernel[None]
 
     # NOTE: we add type ignore because the forward pass does not work well with subclassing
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:  # type: ignore[override]
+    def forward(self, pred: Tensor, target: Tensor) -> Tensor:    # type: ignore[override]
         """Compute Hausdorff loss.
 
         Args:
@@ -182,7 +184,11 @@ class HausdorffERLoss(_HausdorffERLossBase):
         if pred.dim() != 4:
             raise ValueError(f"Only 2D images supported. Got {pred.dim()}.")
 
-        if not (target.max() < pred.size(1) and target.min() >= 0 and target.dtype == torch.long):
+        if (
+            target.max() >= pred.size(1)
+            or target.min() < 0
+            or target.dtype != torch.long
+        ):
             raise ValueError(
                 f"Expect long type target value in range (0, {pred.size(1)})." f"({target.min()}, {target.max()})"
             )

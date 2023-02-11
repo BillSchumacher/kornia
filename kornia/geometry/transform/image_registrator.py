@@ -90,8 +90,7 @@ class Similarity(nn.Module):
             Similarity with shape :math:`(1, 3, 3)`
         """
         rot = self.scale * angle_to_rotation_matrix(self.rot)
-        out = convert_affinematrix_to_homography(torch.cat([rot, self.shift], dim=2))
-        return out
+        return convert_affinematrix_to_homography(torch.cat([rot, self.shift], dim=2))
 
     def forward_inverse(self) -> Tensor:
         r"""Single-batch inverse similarity transform".
@@ -144,24 +143,23 @@ class ImageRegistrator(nn.Module):
                 raise ValueError("You must supply warper together with custom model")
             self.warper = warper
             self.model = model_type
+        elif model_type.lower() == "homography":
+            self.warper = HomographyWarper
+            self.model = Homography()
+        elif model_type.lower() == "similarity":
+            self.warper = HomographyWarper
+            self.model = Similarity(True, True, True)
+        elif model_type.lower() == "translation":
+            self.warper = HomographyWarper
+            self.model = Similarity(False, False, True)
+        elif model_type.lower() == "rotation":
+            self.warper = HomographyWarper
+            self.model = Similarity(True, False, False)
+        elif model_type.lower() == "scale":
+            self.warper = HomographyWarper
+            self.model = Similarity(False, True, False)
         else:
-            if model_type.lower() == "homography":
-                self.warper = HomographyWarper
-                self.model = Homography()
-            elif model_type.lower() == "similarity":
-                self.warper = HomographyWarper
-                self.model = Similarity(True, True, True)
-            elif model_type.lower() == "translation":
-                self.warper = HomographyWarper
-                self.model = Similarity(False, False, True)
-            elif model_type.lower() == "rotation":
-                self.warper = HomographyWarper
-                self.model = Similarity(True, False, False)
-            elif model_type.lower() == "scale":
-                self.warper = HomographyWarper
-                self.model = Similarity(False, True, False)
-            else:
-                raise ValueError(f"{model_type} is not supported. Try {self.known_models}")
+            raise ValueError(f"{model_type} is not supported. Try {self.known_models}")
         self.pyramid_levels = pyramid_levels
         self.optimizer = optimizer
         self.lr = lr
@@ -242,12 +240,10 @@ class ImageRegistrator(nn.Module):
         r"""Warp src_img with estimated model."""
         _height, _width = src_img.shape[-2:]
         warper = self.warper(_height, _width)
-        img_src_to_dst = warper(src_img, self.model())
-        return img_src_to_dst
+        return warper(src_img, self.model())
 
     def warp_dst_inro_src(self, dst_img: Tensor) -> Tensor:
         r"""Warp src_img with inverted estimated model."""
         _height, _width = dst_img.shape[-2:]
         warper = self.warper(_height, _width)
-        img_dst_to_src = warper(dst_img, self.model.forward_inverse())
-        return img_dst_to_src
+        return warper(dst_img, self.model.forward_inverse())

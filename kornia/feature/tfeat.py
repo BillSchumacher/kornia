@@ -6,14 +6,11 @@ import torch.nn as nn
 from kornia.core.check import KORNIA_CHECK_SHAPE
 from kornia.utils.helpers import map_location_to_cpu
 
-urls: Dict[str, str] = {}
-urls["liberty"] = "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-liberty.params"  # pylint: disable
-urls[
-    "notredame"
-] = "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-notredame.params"  # pylint: disable
-urls[
-    "yosemite"
-] = "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-yosemite.params"  # pylint: disable
+urls: Dict[str, str] = {
+    "liberty": "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-liberty.params",
+    "notredame": "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-notredame.params",
+    "yosemite": "https://github.com/vbalnt/tfeat/raw/master/pretrained-models/tfeat-yosemite.params",
+}
 
 
 class TFeat(nn.Module):

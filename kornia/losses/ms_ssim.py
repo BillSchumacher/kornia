@@ -131,7 +131,7 @@ class MS_SSIMLoss(nn.Module):
         if not isinstance(img2, torch.Tensor):
             raise TypeError(f"Output type is not a torch.Tensor. Got {type(img2)}")
 
-        if not len(img1.shape) == len(img2.shape):
+        if len(img1.shape) != len(img2.shape):
             raise ValueError(f"Input shapes should be same. Got {type(img1)} and {type(img2)}.")
 
         g_masks: torch.Tensor = torch.jit.annotate(torch.Tensor, self._g_masks)
@@ -170,8 +170,6 @@ class MS_SSIMLoss(nn.Module):
             loss = torch.mean(loss)
         elif self.reduction == "sum":
             loss = torch.sum(loss)
-        elif self.reduction == "none":
-            pass
-        else:
+        elif self.reduction != "none":
             raise NotImplementedError(f"Invalid reduction mode: {self.reduction}")
         return loss

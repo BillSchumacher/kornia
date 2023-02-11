@@ -230,7 +230,7 @@ def convert_affinematrix_to_homography(A: Tensor) -> Tensor:
     if not isinstance(A, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(A)}")
 
-    if not (len(A.shape) == 3 and A.shape[-2:] == (2, 3)):
+    if len(A.shape) != 3 or A.shape[-2:] != (2, 3):
         raise ValueError(f"Input matrix must be a Bx2x3 tensor. Got {A.shape}")
 
     return _convert_affinematrix_to_homography_impl(A)
@@ -258,7 +258,7 @@ def convert_affinematrix_to_homography3d(A: Tensor) -> Tensor:
     if not isinstance(A, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(A)}")
 
-    if not (len(A.shape) == 3 and A.shape[-2:] == (3, 4)):
+    if len(A.shape) != 3 or A.shape[-2:] != (3, 4):
         raise ValueError(f"Input matrix must be a Bx3x4 tensor. Got {A.shape}")
 
     return _convert_affinematrix_to_homography_impl(A)
@@ -289,7 +289,7 @@ def angle_axis_to_rotation_matrix(angle_axis: Tensor) -> Tensor:
     if not isinstance(angle_axis, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(angle_axis)}")
 
-    if not angle_axis.shape[-1] == 3:
+    if angle_axis.shape[-1] != 3:
         raise ValueError(f"Input size must be a (*, 3) tensor. Got {angle_axis.shape}")
 
     def _compute_rotation_matrix(angle_axis, theta2, eps=1e-6):
@@ -369,7 +369,7 @@ def rotation_matrix_to_angle_axis(rotation_matrix: Tensor) -> Tensor:
     if not isinstance(rotation_matrix, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(rotation_matrix)}")
 
-    if not rotation_matrix.shape[-2:] == (3, 3):
+    if rotation_matrix.shape[-2:] != (3, 3):
         raise ValueError(f"Input size must be a (*, 3, 3) tensor. Got {rotation_matrix.shape}")
     quaternion: Tensor = rotation_matrix_to_quaternion(rotation_matrix, order=QuaternionCoeffOrder.WXYZ)
     return quaternion_to_angle_axis(quaternion, order=QuaternionCoeffOrder.WXYZ)
@@ -404,12 +404,14 @@ def rotation_matrix_to_quaternion(
     if not isinstance(rotation_matrix, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(rotation_matrix)}")
 
-    if not rotation_matrix.shape[-2:] == (3, 3):
+    if rotation_matrix.shape[-2:] != (3, 3):
         raise ValueError(f"Input size must be a (*, 3, 3) tensor. Got {rotation_matrix.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -496,7 +498,7 @@ def normalize_quaternion(quaternion: Tensor, eps: float = 1.0e-12) -> Tensor:
     if not isinstance(quaternion, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 4:
+    if quaternion.shape[-1] != 4:
         raise ValueError(f"Input must be a tensor of shape (*, 4). Got {quaternion.shape}")
     return F.normalize(quaternion, p=2.0, dim=-1, eps=eps)
 
@@ -531,12 +533,14 @@ def quaternion_to_rotation_matrix(
     if not isinstance(quaternion, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 4:
+    if quaternion.shape[-1] != 4:
         raise ValueError(f"Input must be a tensor of shape (*, 4). Got {quaternion.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -615,12 +619,14 @@ def quaternion_to_angle_axis(quaternion: Tensor, order: QuaternionCoeffOrder = Q
     if not torch.is_tensor(quaternion):
         raise TypeError(f"Input type is not a Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 4:
+    if quaternion.shape[-1] != 4:
         raise ValueError(f"Input must be a tensor of shape Nx4 or 4. Got {quaternion.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -688,12 +694,14 @@ def quaternion_log_to_exp(
     if not isinstance(quaternion, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 3:
+    if quaternion.shape[-1] != 3:
         raise ValueError(f"Input must be a tensor of shape (*, 3). Got {quaternion.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -744,12 +752,14 @@ def quaternion_exp_to_log(
     if not isinstance(quaternion, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 4:
+    if quaternion.shape[-1] != 4:
         raise ValueError(f"Input must be a tensor of shape (*, 4). Got {quaternion.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -808,12 +818,14 @@ def angle_axis_to_quaternion(angle_axis: Tensor, order: QuaternionCoeffOrder = Q
     if not torch.is_tensor(angle_axis):
         raise TypeError(f"Input type is not a Tensor. Got {type(angle_axis)}")
 
-    if not angle_axis.shape[-1] == 3:
+    if angle_axis.shape[-1] != 3:
         raise ValueError(f"Input must be a tensor of shape Nx3 or 3. Got {angle_axis.shape}")
 
-    if not torch.jit.is_scripting():
-        if order.name not in QuaternionCoeffOrder.__members__.keys():
-            raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
+    if (
+        not torch.jit.is_scripting()
+        and order.name not in QuaternionCoeffOrder.__members__.keys()
+    ):
+        raise ValueError(f"order must be one of {QuaternionCoeffOrder.__members__.keys()}")
 
     if order == QuaternionCoeffOrder.XYZW:
         warnings.warn(
@@ -950,7 +962,9 @@ def normalize_pixel_coordinates(pixel_coordinates: Tensor, height: int, width: i
         tensor([[1.0408, 1.0202]])
     """
     if pixel_coordinates.shape[-1] != 2:
-        raise ValueError("Input pixel_coordinates must be of shape (*, 2). " "Got {}".format(pixel_coordinates.shape))
+        raise ValueError(
+            f"Input pixel_coordinates must be of shape (*, 2). Got {pixel_coordinates.shape}"
+        )
 
     # compute normalization factor
     hw: Tensor = stack(
@@ -985,7 +999,9 @@ def denormalize_pixel_coordinates(pixel_coordinates: Tensor, height: int, width:
         tensor([[0., 0.]])
     """
     if pixel_coordinates.shape[-1] != 2:
-        raise ValueError("Input pixel_coordinates must be of shape (*, 2). " "Got {}".format(pixel_coordinates.shape))
+        raise ValueError(
+            f"Input pixel_coordinates must be of shape (*, 2). Got {pixel_coordinates.shape}"
+        )
     # compute normalization factor
     hw: Tensor = stack([tensor(width), tensor(height)]).to(pixel_coordinates.device).to(pixel_coordinates.dtype)
 
@@ -1012,7 +1028,9 @@ def normalize_pixel_coordinates3d(
         the normalized pixel coordinates.
     """
     if pixel_coordinates.shape[-1] != 3:
-        raise ValueError("Input pixel_coordinates must be of shape (*, 3). " "Got {}".format(pixel_coordinates.shape))
+        raise ValueError(
+            f"Input pixel_coordinates must be of shape (*, 3). Got {pixel_coordinates.shape}"
+        )
     # compute normalization factor
     dhw: Tensor = (
         stack([tensor(depth), tensor(width), tensor(height)]).to(pixel_coordinates.device).to(pixel_coordinates.dtype)
@@ -1041,7 +1059,9 @@ def denormalize_pixel_coordinates3d(
         the denormalized pixel coordinates.
     """
     if pixel_coordinates.shape[-1] != 3:
-        raise ValueError("Input pixel_coordinates must be of shape (*, 3). " "Got {}".format(pixel_coordinates.shape))
+        raise ValueError(
+            f"Input pixel_coordinates must be of shape (*, 3). Got {pixel_coordinates.shape}"
+        )
     # compute normalization factor
     dhw: Tensor = (
         stack([tensor(depth), tensor(width), tensor(height)]).to(pixel_coordinates.device).to(pixel_coordinates.dtype)
@@ -1088,7 +1108,9 @@ def normalize_homography(
     if not isinstance(dst_pix_trans_src_pix, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(dst_pix_trans_src_pix)}")
 
-    if not (len(dst_pix_trans_src_pix.shape) == 3 or dst_pix_trans_src_pix.shape[-2:] == (3, 3)):
+    if len(dst_pix_trans_src_pix.shape) != 3 and dst_pix_trans_src_pix.shape[
+        -2:
+    ] != (3, 3):
         raise ValueError(f"Input dst_pix_trans_src_pix must be a Bx3x3 tensor. Got {dst_pix_trans_src_pix.shape}")
 
     # source and destination sizes
@@ -1189,7 +1211,9 @@ def denormalize_homography(
     if not isinstance(dst_pix_trans_src_pix, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(dst_pix_trans_src_pix)}")
 
-    if not (len(dst_pix_trans_src_pix.shape) == 3 or dst_pix_trans_src_pix.shape[-2:] == (3, 3)):
+    if len(dst_pix_trans_src_pix.shape) != 3 and dst_pix_trans_src_pix.shape[
+        -2:
+    ] != (3, 3):
         raise ValueError(f"Input dst_pix_trans_src_pix must be a Bx3x3 tensor. Got {dst_pix_trans_src_pix.shape}")
 
     # source and destination sizes
@@ -1226,7 +1250,9 @@ def normalize_homography3d(
     if not isinstance(dst_pix_trans_src_pix, Tensor):
         raise TypeError(f"Input type is not a Tensor. Got {type(dst_pix_trans_src_pix)}")
 
-    if not (len(dst_pix_trans_src_pix.shape) == 3 or dst_pix_trans_src_pix.shape[-2:] == (4, 4)):
+    if len(dst_pix_trans_src_pix.shape) != 3 and dst_pix_trans_src_pix.shape[
+        -2:
+    ] != (4, 4):
         raise ValueError(f"Input dst_pix_trans_src_pix must be a Bx3x3 tensor. Got {dst_pix_trans_src_pix.shape}")
 
     # source and destination sizes

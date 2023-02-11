@@ -77,7 +77,7 @@ class MixAugmentationBaseV2(_BasicAugmentationBase):
     def transform_boxes(self, input: Union[Tensor, Boxes], params: Dict[str, Tensor], flags: Dict[str, Any]) -> Boxes:
         # input is BxNx4x2 or Boxes.
         if isinstance(input, Tensor):
-            if not (len(input.shape) == 4 and input.shape[2:] == torch.Size([4, 2])):
+            if len(input.shape) != 4 or input.shape[2:] != torch.Size([4, 2]):
                 raise RuntimeError(f"Only BxNx4x2 tensor is supported. Got {input.shape}.")
             input = Boxes(input, False, mode="vertices_plus")
         to_apply = params['batch_prob']
@@ -177,9 +177,7 @@ class MixAugmentationBaseV2(_BasicAugmentationBase):
             else:
                 raise NotImplementedError
             outputs.append(output)
-        if len(outputs) == 1:
-            return outputs[0]
-        return outputs
+        return outputs[0] if len(outputs) == 1 else outputs
 
     @torch.jit.ignore
     def inverse(self, **kwargs):

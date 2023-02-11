@@ -670,9 +670,9 @@ def get_gaussian_kernel3d(
     kernel_z = get_gaussian_kernel1d(ksize_z, sigma_z, force_even, device=device, dtype=dtype)
 
     kernel_2d = kernel_x[..., None] @ kernel_y[..., None].transpose(2, 1)
-    kernel_3d = (kernel_z[:, None, :, None] @ (kernel_2d[..., None].transpose(3, 2))).transpose(3, 2)
-
-    return kernel_3d
+    return (
+        kernel_z[:, None, :, None] @ (kernel_2d[..., None].transpose(3, 2))
+    ).transpose(3, 2)
 
 
 def get_laplacian_kernel1d(
@@ -903,9 +903,7 @@ def get_hanning_kernel2d(
 
     ky = get_hanning_kernel1d(kernel_size[0], device, dtype)[None].T
     kx = get_hanning_kernel1d(kernel_size[1], device, dtype)[None]
-    kernel2d = ky @ kx
-
-    return kernel2d
+    return ky @ kx
 
 
 @deprecated(replace_with='get_gaussian_kernel1d', version='6.9.10')

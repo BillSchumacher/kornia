@@ -222,24 +222,24 @@ class AdalamFilter:
             Filtered putative matches.
             A long tensor with shape (num_filtered_matches, 2) with indices of corresponding keypoints in k1 and k2.
         """  # noqa: E501
-        if s1 is None or s2 is None:
-            if self.config['scale_rate_threshold'] is not None:
-                raise AttributeError(
-                    "Current configuration considers keypoint scales for filtering, but scales have not been provided.\n"  # noqa: E501
-                    "Please either provide scales or set 'scale_rate_threshold' to None to disable scale filtering"
-                )
-        if o1 is None or o2 is None:
-            if self.config['orientation_difference_threshold'] is not None:
-                raise AttributeError(
-                    "Current configuration considers keypoint orientations for filtering, but orientations have not been provided.\n"  # noqa: E501
-                    "Please either provide orientations or set 'orientation_difference_threshold' to None to disable orientations filtering"  # noqa: E501
-                )
+        if (s1 is None or s2 is None) and self.config[
+            'scale_rate_threshold'
+        ] is not None:
+            raise AttributeError(
+                "Current configuration considers keypoint scales for filtering, but scales have not been provided.\n"  # noqa: E501
+                "Please either provide scales or set 'scale_rate_threshold' to None to disable scale filtering"
+            )
+        if (o1 is None or o2 is None) and self.config[
+            'orientation_difference_threshold'
+        ] is not None:
+            raise AttributeError(
+                "Current configuration considers keypoint orientations for filtering, but orientations have not been provided.\n"  # noqa: E501
+                "Please either provide orientations or set 'orientation_difference_threshold' to None to disable orientations filtering"  # noqa: E501
+            )
         k1, k2, d1, d2, o1, o2, s1, s2 = self.__to_torch(k1, k2, d1, d2, o1, o2, s1, s2)
         if (len(d2) <= 1) or (len(d1) <= 1):
             idxs, dists = _no_match(d1)
-            if return_dist:
-                return idxs, dists
-            return idxs
+            return (idxs, dists) if return_dist else idxs
         distmat = dist_matrix(d1, d2, is_normalized=False)
         dd12, nn12 = torch.topk(distmat, k=2, dim=1, largest=False)  # (n1, 2)
 

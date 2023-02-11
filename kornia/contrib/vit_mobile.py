@@ -37,7 +37,7 @@ class Attention(nn.Module):
     def __init__(self, dim: int, heads: int = 8, dim_head: int = 64, dropout: float = 0.0) -> None:
         super().__init__()
         inner_dim = dim_head * heads
-        project_out = not (heads == 1 and dim_head == dim)
+        project_out = heads != 1 or dim_head != dim
 
         self.heads = heads
         self.scale = dim_head**-0.5
@@ -141,10 +141,7 @@ class MV2Block(nn.Module):
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.use_res_connect:
-            return x + self.conv(x)
-        else:
-            return self.conv(x)
+        return x + self.conv(x) if self.use_res_connect else self.conv(x)
 
 
 class MobileViTBlock(nn.Module):

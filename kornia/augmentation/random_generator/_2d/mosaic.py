@@ -44,11 +44,7 @@ class MosaicGenerator(RandomGeneratorBase):
         self.start_ratio_range = start_ratio_range
 
     def __repr__(self) -> str:
-        repr = (
-            f"output_size={self.output_size}, mosaic_grid={self.mosaic_grid}, "
-            f"start_ratio_range={self.start_ratio_range}"
-        )
-        return repr
+        return f"output_size={self.output_size}, mosaic_grid={self.mosaic_grid}, start_ratio_range={self.start_ratio_range}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         self.start_ratio_range_sampler = Uniform(

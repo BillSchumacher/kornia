@@ -265,10 +265,11 @@ class RandomCrop(GeometricAugmentationBase2D):
                 f"`inverse` is only applicable for resample cropping mode. Got {flags['cropping_mode']}."
             )
         output = super().inverse_boxes(input, params, flags, transform, **kwargs)
-        if not params["batch_prob"].all():
-            return output
-
-        return output.unpad(params["padding_size"])
+        return (
+            output.unpad(params["padding_size"])
+            if params["batch_prob"].all()
+            else output
+        )
 
     def inverse_keypoints(
         self,
@@ -283,10 +284,11 @@ class RandomCrop(GeometricAugmentationBase2D):
                 f"`inverse` is only applicable for resample cropping mode. Got {flags['cropping_mode']}."
             )
         output = super().inverse_keypoints(input, params, flags, transform, **kwargs)
-        if not params["batch_prob"].all():
-            return output
-
-        return output.unpad(params["padding_size"])
+        return (
+            output.unpad(params["padding_size"])
+            if params["batch_prob"].all()
+            else output
+        )
 
     # Override parameters for precrop
     def forward_parameters(self, batch_shape) -> Dict[str, Tensor]:

@@ -141,16 +141,15 @@ def _compute_luts(
     b, gh, gw, c, th, tw = tiles_x_im.shape
     pixels: int = th * tw
     tiles: torch.Tensor = tiles_x_im.view(-1, pixels)  # test with view  # T x (THxTW)
-    if not diff:
-        if torch.jit.is_scripting():
-            histos = torch.stack([_torch_histc_cast(tile, bins=num_bins, min=0, max=1) for tile in tiles])
-        else:
-            histos = torch.stack(list(map(_my_histc, tiles, [num_bins] * len(tiles))))
-    else:
+    if diff:
         bins: torch.Tensor = torch.linspace(0, 1, num_bins, device=tiles.device)
         histos = histogram(tiles, bins, torch.tensor(0.001)).squeeze()
         histos *= pixels
 
+    elif torch.jit.is_scripting():
+        histos = torch.stack([_torch_histc_cast(tile, bins=num_bins, min=0, max=1) for tile in tiles])
+    else:
+        histos = torch.stack(list(map(_my_histc, tiles, [num_bins] * len(tiles))))
     if clip > 0.0:
         max_val: float = max(clip * pixels // num_bins, 1)
         histos.clamp_(max=max_val)

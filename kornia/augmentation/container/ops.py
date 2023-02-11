@@ -85,7 +85,7 @@ class AugmentationSequentialOps:
             return InputSequentialOps
         if data_key == DataKey.MASK:
             return MaskSequentialOps
-        if data_key == DataKey.BBOX or data_key == DataKey.BBOX_XYWH or data_key == DataKey.BBOX_XYXY:
+        if data_key in [DataKey.BBOX, DataKey.BBOX_XYWH, DataKey.BBOX_XYXY]:
             return BoxSequentialOps
         if data_key == DataKey.KEYPOINTS:
             return KeypointSequentialOps
@@ -103,7 +103,7 @@ class AugmentationSequentialOps:
         outputs = []
         for inp, dcate in zip(arg, _data_keys):
             op = self._get_op(dcate)
-            extra_arg = extra_args[dcate] if dcate in extra_args else {}
+            extra_arg = extra_args.get(dcate, {})
             outputs.append(op.transform(inp, module, param=param, extra_args=extra_arg))
         if len(outputs) == 1 and isinstance(outputs, (list, tuple)):
             return outputs[0]
@@ -121,7 +121,7 @@ class AugmentationSequentialOps:
         outputs = []
         for inp, dcate in zip(arg, _data_keys):
             op = self._get_op(dcate)
-            extra_arg = extra_args[dcate] if dcate in extra_args else {}
+            extra_arg = extra_args.get(dcate, {})
             outputs.append(op.inverse(inp, module, param=param, extra_args=extra_arg))
         if len(outputs) == 1 and isinstance(outputs, (list, tuple)):
             return outputs[0]
@@ -141,10 +141,13 @@ def make_input_only_sequential(module: 'kornia.augmentation.ImageSequential') ->
 def get_geometric_only_param(module: 'kornia.augmentation.ImageSequential', param: List[ParamItem]) -> List[ParamItem]:
     named_modules = module.get_forward_sequence(param)
 
-    res: List[ParamItem] = []
-    for (_, mod), p in zip(named_modules, param):
-        if isinstance(mod, (GeometricAugmentationBase2D, GeometricAugmentationBase3D)):
-            res.append(p)
+    res: List[ParamItem] = [
+        p
+        for (_, mod), p in zip(named_modules, param)
+        if isinstance(
+            mod, (GeometricAugmentationBase2D, GeometricAugmentationBase3D)
+        )
+    ]
     return res
 
 
@@ -155,10 +158,10 @@ class InputSequentialOps(SequentialOpsInterface[Tensor]):
             input = module(input, params=cls.get_instance_module_param(param), **extra_args)
         elif isinstance(module, kornia.augmentation.ImageSequential):
             input = module.transform_inputs(input, params=cls.get_sequential_module_param(param), extra_args=extra_args)
-        else:
-            if param.data is not None:
-                raise AssertionError(f"Non-augmentaion operation {param.name} require empty parameters. Got {param}.")
+        elif param.data is None:
             input = module(input)
+        else:
+            raise AssertionError(f"Non-augmentaion operation {param.name} require empty parameters. Got {param}.")
         return input
 
     @classmethod

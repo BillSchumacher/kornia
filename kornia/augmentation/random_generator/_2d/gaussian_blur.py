@@ -33,15 +33,14 @@ class RandomGaussianBlurGenerator(RandomGeneratorBase):
         self.sigma = sigma
 
     def __repr__(self) -> str:
-        repr = f"sigma={self.sigma}"
-        return repr
+        return f"sigma={self.sigma}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
-        if not isinstance(self.sigma, (torch.Tensor)):
-            sigma = torch.tensor(self.sigma, device=device, dtype=dtype)
-        else:
-            sigma = sigma.to(device=device, dtype=dtype)
-
+        sigma = (
+            sigma.to(device=device, dtype=dtype)
+            if isinstance(self.sigma, (torch.Tensor))
+            else torch.tensor(self.sigma, device=device, dtype=dtype)
+        )
         _joint_range_check(sigma, "sigma", (0, float('inf')))
 
         self.sigma_sampler = Uniform(sigma[0], sigma[1], validate_args=False)

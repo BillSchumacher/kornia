@@ -50,9 +50,7 @@ class RaySampler:
         return self._points_2d
 
     def __len__(self) -> int:
-        if self.origins is None:
-            return 0
-        return self.origins.shape[0]
+        return 0 if self.origins is None else self.origins.shape[0]
 
     def _calc_ray_directions_cam(self, cameras: PinholeCamera, points_2d: Tensor):
         # FIXME: This function should call perspective.unproject_points or, implement in PinholeCamera unproject to
@@ -327,7 +325,7 @@ class RandomGridRaySampler(RandomRaySampler):
             x_rand = torch.randperm(int(width), device=self._device, dtype=self._dtype)[: min(int(width), n_sqrt)]
             y_grid, x_grid = torch_meshgrid([y_rand, x_rand], indexing='ij')
             RaySampler._add_points2d_as_flat_tensors_to_num_ray_dict(
-                n_sqrt * n_sqrt, x_grid, y_grid, camera_id, points2d_as_flat_tensors
+                n_sqrt**2, x_grid, y_grid, camera_id, points2d_as_flat_tensors
             )
         return RaySampler._build_num_ray_dict_of_points2d(points2d_as_flat_tensors)
 
@@ -384,11 +382,14 @@ def sample_lengths(num_rays: int, num_ray_points: int, device: Device, dtype: to
         raise ValueError('Number of ray points must be greater than 1')
     if not irregular:
         zero_to_one = torch.linspace(0.0, 1.0, num_ray_points, device=device, dtype=dtype)
-        lengths = zero_to_one.repeat(num_rays, 1)  # FIXME: Expand instead of repeat maybe?
+        return zero_to_one.repeat(num_rays, 1)
     else:
         zero_to_one = torch.linspace(0.0, 1.0, num_ray_points + 1, device=device, dtype=dtype)
-        lengths = torch.rand(num_rays, num_ray_points, device=device) / num_ray_points + zero_to_one[:-1]
-    return lengths
+        return (
+            torch.rand(num_rays, num_ray_points, device=device)
+            / num_ray_points
+            + zero_to_one[:-1]
+        )
 
 
 # TODO: Implement hierarchical ray sampling as described in Mildenhall (2020) Sec. 5.2
@@ -396,7 +397,7 @@ def sample_lengths(num_rays: int, num_ray_points: int, device: Device, dtype: to
 
 def sample_ray_points(
     origins: Tensor, directions: Tensor, lengths: Tensor
-) -> Tensor:  # FIXME: Test by projecting to points_2d and compare with sampler 2d points
+) -> Tensor:    # FIXME: Test by projecting to points_2d and compare with sampler 2d points
     r"""
     Args:
         origins: tensor containing ray origins in 3d world coordinates. Tensor shape :math:`(*, 3)`.
@@ -406,8 +407,7 @@ def sample_ray_points(
     Returns:
         points_3d: Points along rays :math:`(*, num_ray_points, 3)`
     """
-    points_3d = origins[..., None, :] + lengths[..., None] * directions[..., None, :]
-    return points_3d
+    return origins[..., None, :] + lengths[..., None] * directions[..., None, :]
 
 
 def calc_ray_t_vals(points_3d: Tensor) -> Tensor:
@@ -419,5 +419,6 @@ def calc_ray_t_vals(points_3d: Tensor) -> Tensor:
     Returns:
         t values along rays :math:`(*, num_ray_points)`
     """
-    t_vals = torch.linalg.norm(points_3d - points_3d[..., 0, :].unsqueeze(-2), dim=-1)
-    return t_vals
+    return torch.linalg.norm(
+        points_3d - points_3d[..., 0, :].unsqueeze(-2), dim=-1
+    )

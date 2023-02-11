@@ -54,10 +54,13 @@ class CropGenerator(RandomGeneratorBase):
             )
 
         input_size = (batch_shape[-2], batch_shape[-1])
-        if not isinstance(self.size, Tensor):
-            size = tensor(self.size, device=_device, dtype=_dtype).repeat(batch_size, 1)
-        else:
-            size = self.size.to(device=_device, dtype=_dtype)
+        size = (
+            self.size.to(device=_device, dtype=_dtype)
+            if isinstance(self.size, Tensor)
+            else tensor(self.size, device=_device, dtype=_dtype).repeat(
+                batch_size, 1
+            )
+        )
         if size.shape != torch.Size([batch_size, 2]):
             raise AssertionError(
                 "If `size` is a tensor, it must be shaped as (B, 2). "
@@ -183,8 +186,7 @@ class ResizedCropGenerator(CropGenerator):
         self.output_size = output_size
 
     def __repr__(self) -> str:
-        repr = f"scale={self.scale}, resize_to={self.ratio}, output_size={self.output_size}"
-        return repr
+        return f"scale={self.scale}, resize_to={self.ratio}, output_size={self.output_size}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         scale = torch.as_tensor(self.scale, device=device, dtype=dtype)
@@ -216,7 +218,7 @@ class ResizedCropGenerator(CropGenerator):
         w = torch.sqrt(area * aspect_ratio).round().floor()
         h = torch.sqrt(area / aspect_ratio).round().floor()
         # Element-wise w, h condition
-        cond = ((0 < w) * (w < size[0]) * (0 < h) * (h < size[1])).int()
+        cond = ((w > 0) * (w < size[0]) * (h > 0) * (h < size[1])).int()
 
         # torch.argmax is not reproducible across devices: https://github.com/pytorch/pytorch/issues/17738
         # Here, we will select the first occurrence of the duplicated elements.
@@ -271,9 +273,14 @@ def center_crop_generator(
     _common_param_check(batch_size)
     if not isinstance(size, (tuple, list)) and len(size) == 2:
         raise ValueError(f"Input size must be a tuple/list of length 2. Got {size}")
-    if not (type(height) is int and height > 0 and type(width) is int and width > 0):
+    if (
+        type(height) is not int
+        or height <= 0
+        or type(width) is not int
+        or width <= 0
+    ):
         raise AssertionError(f"'height' and 'width' must be integers. Got {height}, {width}.")
-    if not (height >= size[0] and width >= size[1]):
+    if height < size[0] or width < size[1]:
         raise AssertionError(f"Crop size must be smaller than input size. Got ({height}, {width}) and {size}.")
 
     # unpack input sizes

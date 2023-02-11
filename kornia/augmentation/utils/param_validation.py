@@ -7,7 +7,7 @@ from kornia.core import Tensor, as_tensor, tensor
 
 def _common_param_check(batch_size: int, same_on_batch: Optional[bool] = None):
     """Valid batch_size and same_on_batch params."""
-    if not (type(batch_size) is int and batch_size >= 0):
+    if type(batch_size) is not int or batch_size < 0:
         raise AssertionError(f"`batch_size` shall be a positive integer. Got {batch_size}.")
     if same_on_batch is not None and type(same_on_batch) is not bool:
         raise AssertionError(f"`same_on_batch` shall be boolean. Got {same_on_batch}.")
@@ -53,16 +53,15 @@ def _joint_range_check(ranged_factor: Tensor, name: str, bounds: Optional[Tuple[
     """Check if bounds[0] <= ranged_factor[0] <= ranged_factor[1] <= bounds[1]"""
     if bounds is None:
         bounds = (float('-inf'), float('inf'))
-    if ranged_factor.dim() == 1 and len(ranged_factor) == 2:
-        if not bounds[0] <= ranged_factor[0] or not bounds[1] >= ranged_factor[1]:
-            raise ValueError(f"{name} out of bounds. Expected inside {bounds}, got {ranged_factor}.")
-
-        if not bounds[0] <= ranged_factor[0] <= ranged_factor[1] <= bounds[1]:
-            raise ValueError(f"{name}[0] should be smaller than {name}[1] got {ranged_factor}")
-    else:
+    if ranged_factor.dim() != 1 or len(ranged_factor) != 2:
         raise TypeError(
             f"{name} should be a tensor with length 2 whose values between {bounds}. " f"Got {ranged_factor}."
         )
+    if not bounds[0] <= ranged_factor[0] or not bounds[1] >= ranged_factor[1]:
+        raise ValueError(f"{name} out of bounds. Expected inside {bounds}, got {ranged_factor}.")
+
+    if not bounds[0] <= ranged_factor[0] <= ranged_factor[1] <= bounds[1]:
+        raise ValueError(f"{name}[0] should be smaller than {name}[1] got {ranged_factor}")
 
 
 def _singular_range_check(
@@ -84,15 +83,14 @@ def _singular_range_check(
         return
     if bounds is None:
         bounds = (float('-inf'), float('inf'))
-    if ranged_factor.dim() == 1 and len(ranged_factor) == dim_size:
-        for f in ranged_factor:
-            if not bounds[0] <= f <= bounds[1]:
-                raise ValueError(f"{name} out of bounds. Expected inside {bounds}, got {ranged_factor}.")
-    else:
+    if ranged_factor.dim() != 1 or len(ranged_factor) != dim_size:
         raise TypeError(
             f"{name} should be a float number or a tuple with length {dim_size} whose values between {bounds}."
             f"Got {ranged_factor}"
         )
+    for f in ranged_factor:
+        if not bounds[0] <= f <= bounds[1]:
+            raise ValueError(f"{name} out of bounds. Expected inside {bounds}, got {ranged_factor}.")
 
 
 def _tuple_range_reader(
@@ -137,38 +135,38 @@ def _tuple_range_reader(
                 f"Degrees must be a {list(target_shape)} tensor for the degree range for independent operation."
                 f"Got {input_range}"
             )
-    else:
-        if isinstance(input_range, (float, int)):
-            if input_range < 0:
-                raise ValueError(f"If input_range is only one number it must be a positive number. Got{input_range}")
+    elif isinstance(input_range, (float, int)):
+        if input_range < 0:
+            raise ValueError(f"If input_range is only one number it must be a positive number. Got{input_range}")
+        else:
             input_range_tmp = tensor([-input_range, input_range], device=device, dtype=dtype).repeat(target_shape[0], 1)
 
-        elif (
-            isinstance(input_range, (tuple, list))
-            and len(input_range) == 2
-            and isinstance(input_range[0], (float, int))
-            and isinstance(input_range[1], (float, int))
-        ):
-            input_range_tmp = tensor(input_range, device=device, dtype=dtype).repeat(target_shape[0], 1)
+    elif (
+        isinstance(input_range, (tuple, list))
+        and len(input_range) == 2
+        and isinstance(input_range[0], (float, int))
+        and isinstance(input_range[1], (float, int))
+    ):
+        input_range_tmp = tensor(input_range, device=device, dtype=dtype).repeat(target_shape[0], 1)
 
-        elif (
-            isinstance(input_range, (tuple, list))
-            and len(input_range) == target_shape[0]
-            and all(isinstance(x, (float, int)) for x in input_range)
-        ):
-            input_range_tmp = tensor([(-s, s) for s in input_range], device=device, dtype=dtype)
+    elif (
+        isinstance(input_range, (tuple, list))
+        and len(input_range) == target_shape[0]
+        and all(isinstance(x, (float, int)) for x in input_range)
+    ):
+        input_range_tmp = tensor([(-s, s) for s in input_range], device=device, dtype=dtype)
 
-        elif (
-            isinstance(input_range, (tuple, list))
-            and len(input_range) == target_shape[0]
-            and all(isinstance(x, (tuple, list)) for x in input_range)
-        ):
-            input_range_tmp = tensor(input_range, device=device, dtype=dtype)
+    elif (
+        isinstance(input_range, (tuple, list))
+        and len(input_range) == target_shape[0]
+        and all(isinstance(x, (tuple, list)) for x in input_range)
+    ):
+        input_range_tmp = tensor(input_range, device=device, dtype=dtype)
 
-        else:
-            raise TypeError(
-                "If not pass a tensor, it must be float, (float, float) for isotropic operation or a tuple of "
-                f"{target_size} floats or {target_size} (float, float) for independent operation. Got {input_range}."
-            )
+    else:
+        raise TypeError(
+            "If not pass a tensor, it must be float, (float, float) for isotropic operation or a tuple of "
+            f"{target_size} floats or {target_size} (float, float) for independent operation. Got {input_range}."
+        )
 
     return input_range_tmp

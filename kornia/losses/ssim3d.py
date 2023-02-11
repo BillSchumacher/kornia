@@ -52,8 +52,6 @@ def ssim3d_loss(
         loss = loss.mean()
     elif reduction == "sum":
         loss = loss.sum()
-    elif reduction == "none":
-        pass
     return loss
 
 

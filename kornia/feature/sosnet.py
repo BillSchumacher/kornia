@@ -6,9 +6,10 @@ import torch.nn as nn
 from kornia.core.check import KORNIA_CHECK_SHAPE
 from kornia.utils.helpers import map_location_to_cpu
 
-urls: Dict[str, str] = {}
-urls["lib"] = "https://github.com/yuruntian/SOSNet/raw/master/sosnet-weights/sosnet_32x32_liberty.pth"
-urls["hp_a"] = "https://github.com/yuruntian/SOSNet/raw/master/sosnet-weights/sosnet_32x32_hpatches_a.pth"
+urls: Dict[str, str] = {
+    "lib": "https://github.com/yuruntian/SOSNet/raw/master/sosnet-weights/sosnet_32x32_liberty.pth",
+    "hp_a": "https://github.com/yuruntian/SOSNet/raw/master/sosnet-weights/sosnet_32x32_hpatches_a.pth",
+}
 
 
 class SOSNet(nn.Module):

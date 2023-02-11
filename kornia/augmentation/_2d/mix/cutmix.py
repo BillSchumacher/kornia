@@ -104,20 +104,24 @@ class RandomCutMixV2(MixAugmentationBaseV2):
     def apply_non_transform_class(
         self, input: Tensor, params: Dict[str, Tensor], flags: Optional[Dict[str, Any]] = None
     ) -> Tensor:
-        out_labels = []
         lam = zeros((len(input)), device=input.device, dtype=DType.to_torch(int(params["dtype"].item())))
-        for _ in range(self._param_generator.num_mix):
-            out_labels.append(
-                stack(
-                    [
-                        input.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                        input.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                        lam,
-                    ],
-                    1,
-                )
+        out_labels = [
+            stack(
+                [
+                    input.to(
+                        device=input.device,
+                        dtype=DType.to_torch(int(params["dtype"].item())),
+                    ),
+                    input.to(
+                        device=input.device,
+                        dtype=DType.to_torch(int(params["dtype"].item())),
+                    ),
+                    lam,
+                ],
+                1,
             )
-
+            for _ in range(self._param_generator.num_mix)
+        ]
         return stack(out_labels, 0)
 
     def apply_transform(

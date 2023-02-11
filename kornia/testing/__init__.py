@@ -17,9 +17,7 @@ __all__ = ["tensor_to_gradcheck_var", "create_eye_batch", "xla_is_available", "a
 
 def xla_is_available() -> bool:
     """Return whether `torch_xla` is available in the system."""
-    if importlib.util.find_spec("torch_xla") is not None:
-        return True
-    return False
+    return importlib.util.find_spec("torch_xla") is not None
 
 
 def is_mps_tensor_safe(x: Tensor) -> bool:
@@ -54,9 +52,10 @@ T = TypeVar('T')
 
 
 def dict_to(data: Dict[T, Any], device: torch.device, dtype: torch.dtype) -> Dict[T, Any]:
-    out: Dict[T, Any] = {}
-    for key, val in data.items():
-        out[key] = val.to(device, dtype) if isinstance(val, Tensor) else val
+    out: Dict[T, Any] = {
+        key: val.to(device, dtype) if isinstance(val, Tensor) else val
+        for key, val in data.items()
+    }
     return out
 
 
@@ -74,8 +73,7 @@ def check_is_tensor(obj):
 def create_rectified_fundamental_matrix(batch_size):
     """Create a batch of rectified fundamental matrices of shape Bx3x3."""
     F_rect = tensor([[0.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]]).view(1, 3, 3)
-    F_repeat = F_rect.expand(batch_size, 3, 3)
-    return F_repeat
+    return F_rect.expand(batch_size, 3, 3)
 
 
 def create_random_fundamental_matrix(batch_size, std_val=1e-3):
@@ -186,15 +184,15 @@ def generate_two_view_random_scene(
     K2 = K1.clone()
 
     # rotation
-    R1 = scene['R'][0:1].to(device, dtype)
+    R1 = scene['R'][:1].to(device, dtype)
     R2 = scene['R'][1:2].to(device, dtype)
 
     # translation
-    t1 = scene['t'][0:1].to(device, dtype)
+    t1 = scene['t'][:1].to(device, dtype)
     t2 = scene['t'][1:2].to(device, dtype)
 
     # projection matrix, P = K(R|t)
-    P1 = scene['P'][0:1].to(device, dtype)
+    P1 = scene['P'][:1].to(device, dtype)
     P2 = scene['P'][1:2].to(device, dtype)
 
     # fundamental matrix
@@ -206,7 +204,7 @@ def generate_two_view_random_scene(
     X = scene['points3d'].to(device, dtype)
 
     # projected points
-    x1 = scene['points2d'][0:1].to(device, dtype)
+    x1 = scene['points2d'][:1].to(device, dtype)
     x2 = scene['points2d'][1:2].to(device, dtype)
 
     return dict(K1=K1, K2=K2, R1=R1, R2=R2, t1=t1, t2=t2, P1=P1, P2=P2, F=F_mat, X=X, x1=x1, x2=x2)
@@ -235,21 +233,16 @@ def default_with_one_parameter_changed(*, default={}, **possible_parameters):
 def _get_precision(device: torch.device, dtype: torch.dtype) -> float:
     if 'xla' in device.type:
         return 1e-2
-    if dtype == torch.float16:
-        return 1e-3
-    return 1e-4
+    return 1e-3 if dtype == torch.float16 else 1e-4
 
 
 def _get_precision_by_name(
     device: torch.device, device_target: str, tol_val: float, tol_val_default: float = 1e-4
 ) -> float:
-    if device_target not in ['cpu', 'cuda', 'xla']:
+    if device_target in {'cpu', 'cuda', 'xla'}:
+        return tol_val if device_target in device.type else tol_val_default
+    else:
         raise ValueError(f"Invalid device name: {device_target}.")
-
-    if device_target in device.type:
-        return tol_val
-
-    return tol_val_default
 
 
 def _default_tolerances(*inputs: Any) -> Tuple[float, float]:

@@ -37,13 +37,13 @@ def depth_to_3d(depth: Tensor, camera_matrix: Tensor, normalize_points: bool = F
     if not isinstance(depth, Tensor):
         raise TypeError(f"Input depht type is not a Tensor. Got {type(depth)}.")
 
-    if not (len(depth.shape) == 4 and depth.shape[-3] == 1):
+    if len(depth.shape) != 4 or depth.shape[-3] != 1:
         raise ValueError(f"Input depth musth have a shape (B, 1, H, W). Got: {depth.shape}")
 
     if not isinstance(camera_matrix, Tensor):
         raise TypeError(f"Input camera_matrix type is not a Tensor. " f"Got {type(camera_matrix)}.")
 
-    if not (len(camera_matrix.shape) == 3 and camera_matrix.shape[-2:] == (3, 3)):
+    if len(camera_matrix.shape) != 3 or camera_matrix.shape[-2:] != (3, 3):
         raise ValueError(f"Input camera_matrix must have a shape (B, 3, 3). " f"Got: {camera_matrix.shape}.")
 
     # create base coordinates grid
@@ -84,13 +84,13 @@ def depth_to_normals(depth: Tensor, camera_matrix: Tensor, normalize_points: boo
     if not isinstance(depth, Tensor):
         raise TypeError(f"Input depht type is not a Tensor. Got {type(depth)}.")
 
-    if not (len(depth.shape) == 4 and depth.shape[-3] == 1):
+    if len(depth.shape) != 4 or depth.shape[-3] != 1:
         raise ValueError(f"Input depth musth have a shape (B, 1, H, W). Got: {depth.shape}")
 
     if not isinstance(camera_matrix, Tensor):
         raise TypeError(f"Input camera_matrix type is not a Tensor. " f"Got {type(camera_matrix)}.")
 
-    if not (len(camera_matrix.shape) == 3 and camera_matrix.shape[-2:] == (3, 3)):
+    if len(camera_matrix.shape) != 3 or camera_matrix.shape[-2:] != (3, 3):
         raise ValueError(f"Input camera_matrix must have a shape (B, 3, 3). " f"Got: {camera_matrix.shape}.")
 
     # compute the 3d points from depth
@@ -128,25 +128,25 @@ def warp_frame_depth(
     if not isinstance(image_src, Tensor):
         raise TypeError(f"Input image_src type is not a Tensor. Got {type(image_src)}.")
 
-    if not len(image_src.shape) == 4:
+    if len(image_src.shape) != 4:
         raise ValueError(f"Input image_src musth have a shape (B, D, H, W). Got: {image_src.shape}")
 
     if not isinstance(depth_dst, Tensor):
         raise TypeError(f"Input depht_dst type is not a Tensor. Got {type(depth_dst)}.")
 
-    if not (len(depth_dst.shape) == 4 and depth_dst.shape[-3] == 1):
+    if len(depth_dst.shape) != 4 or depth_dst.shape[-3] != 1:
         raise ValueError(f"Input depth_dst musth have a shape (B, 1, H, W). Got: {depth_dst.shape}")
 
     if not isinstance(src_trans_dst, Tensor):
         raise TypeError(f"Input src_trans_dst type is not a Tensor. " f"Got {type(src_trans_dst)}.")
 
-    if not (len(src_trans_dst.shape) == 3 and src_trans_dst.shape[-2:] == (4, 4)):
+    if len(src_trans_dst.shape) != 3 or src_trans_dst.shape[-2:] != (4, 4):
         raise ValueError(f"Input src_trans_dst must have a shape (B, 4, 4). " f"Got: {src_trans_dst.shape}.")
 
     if not isinstance(camera_matrix, Tensor):
         raise TypeError(f"Input camera_matrix type is not a Tensor. " f"Got {type(camera_matrix)}.")
 
-    if not (len(camera_matrix.shape) == 3 and camera_matrix.shape[-2:] == (3, 3)):
+    if len(camera_matrix.shape) != 3 or camera_matrix.shape[-2:] != (3, 3):
         raise ValueError(f"Input camera_matrix must have a shape (B, 3, 3). " f"Got: {camera_matrix.shape}.")
     # unproject source points to camera frame
     points_3d_dst: Tensor = depth_to_3d(depth_dst, camera_matrix, normalize_points)  # Bx3xHxW
@@ -219,12 +219,11 @@ class DepthWarper(Module):
         r"""Compute the projection matrix from the source to destination frame."""
         if not isinstance(self._pinhole_dst, PinholeCamera):
             raise TypeError(
-                "Member self._pinhole_dst expected to be of class "
-                "PinholeCamera. Got {}".format(type(self._pinhole_dst))
+                f"Member self._pinhole_dst expected to be of class PinholeCamera. Got {type(self._pinhole_dst)}"
             )
         if not isinstance(pinhole_src, PinholeCamera):
             raise TypeError(
-                "Argument pinhole_src expected to be of class " "PinholeCamera. Got {}".format(type(pinhole_src))
+                f"Argument pinhole_src expected to be of class PinholeCamera. Got {type(pinhole_src)}"
             )
         # compute the relative pose between the non reference and the reference
         # camera frames.
@@ -279,7 +278,9 @@ class DepthWarper(Module):
             raise ValueError("Please, call compute_projection_matrix.")
 
         if len(depth_src.shape) != 4:
-            raise ValueError("Input depth_src has to be in the shape of " "Bx1xHxW. Got {}".format(depth_src.shape))
+            raise ValueError(
+                f"Input depth_src has to be in the shape of Bx1xHxW. Got {depth_src.shape}"
+            )
 
         # unpack depth attributes
         batch_size, _, _, _ = depth_src.shape

@@ -89,9 +89,10 @@ def find_fundamental(
         raise AssertionError(points1.shape, points2.shape)
     if points1.shape[1] < 8:
         raise AssertionError(points1.shape)
-    if not (weights is None):
-        if not (len(weights.shape) == 2 and weights.shape[1] == points1.shape[1]):
-            raise AssertionError(weights.shape)
+    if weights is not None and (
+        len(weights.shape) != 2 or weights.shape[1] != points1.shape[1]
+    ):
+        raise AssertionError(weights.shape)
 
     points1_norm, transform1 = normalize_points(points1)
     points2_norm, transform2 = normalize_points(points2)
@@ -200,7 +201,7 @@ def get_closest_point_on_epipolar_line(pts1: Tensor, pts2: Tensor, Fm: Tensor) -
     """
     if not isinstance(Fm, Tensor):
         raise TypeError(f"Fm type is not a torch.Tensor. Got {type(Fm)}")
-    if (len(Fm.shape) < 3) or not Fm.shape[-2:] == (3, 3):
+    if len(Fm.shape) < 3 or Fm.shape[-2:] != (3, 3):
         raise ValueError(f"Fm must be a (*, 3, 3) tensor. Got {Fm.shape}")
     if pts1.shape[-1] == 2:
         pts1 = convert_points_to_homogeneous(pts1)
@@ -208,8 +209,7 @@ def get_closest_point_on_epipolar_line(pts1: Tensor, pts2: Tensor, Fm: Tensor) -
         pts2 = convert_points_to_homogeneous(pts2)
     line1in2 = compute_correspond_epilines(pts1, Fm)
     perp = get_perpendicular(line1in2, pts2)
-    points1_in_2 = convert_points_from_homogeneous(line1in2.cross(perp, dim=2))
-    return points1_in_2
+    return convert_points_from_homogeneous(line1in2.cross(perp, dim=2))
 
 
 def fundamental_from_essential(E_mat: Tensor, K1: Tensor, K2: Tensor) -> Tensor:
@@ -225,11 +225,11 @@ def fundamental_from_essential(E_mat: Tensor, K1: Tensor, K2: Tensor) -> Tensor:
     Returns:
         The fundamental matrix with shape :math:`(*, 3, 3)`.
     """
-    if not (len(E_mat.shape) >= 2 and E_mat.shape[-2:] == (3, 3)):
+    if len(E_mat.shape) < 2 or E_mat.shape[-2:] != (3, 3):
         raise AssertionError(E_mat.shape)
-    if not (len(K1.shape) >= 2 and K1.shape[-2:] == (3, 3)):
+    if len(K1.shape) < 2 or K1.shape[-2:] != (3, 3):
         raise AssertionError(K1.shape)
-    if not (len(K2.shape) >= 2 and K2.shape[-2:] == (3, 3)):
+    if len(K2.shape) < 2 or K2.shape[-2:] != (3, 3):
         raise AssertionError(K2.shape)
     if not len(E_mat.shape[:-2]) == len(K1.shape[:-2]) == len(K2.shape[:-2]):
         raise AssertionError
@@ -252,9 +252,9 @@ def fundamental_from_projections(P1: Tensor, P2: Tensor) -> Tensor:
     Returns:
          The fundamental matrix with shape :math:`(*, 3, 3)`.
     """
-    if not (len(P1.shape) >= 2 and P1.shape[-2:] == (3, 4)):
+    if len(P1.shape) < 2 or P1.shape[-2:] != (3, 4):
         raise AssertionError(P1.shape)
-    if not (len(P2.shape) >= 2 and P2.shape[-2:] == (3, 4)):
+    if len(P2.shape) < 2 or P2.shape[-2:] != (3, 4):
         raise AssertionError(P2.shape)
     if P1.shape[:-2] != P2.shape[:-2]:
         raise AssertionError

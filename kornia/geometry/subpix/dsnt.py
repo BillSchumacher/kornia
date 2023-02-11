@@ -12,7 +12,7 @@ from kornia.utils.grid import create_meshgrid
 
 def _validate_batched_image_tensor_input(tensor):
     check_is_tensor(tensor)
-    if not len(tensor.shape) == 4:
+    if len(tensor.shape) != 4:
         raise ValueError(f"Invalid input shape, we expect BxCxHxW. Got: {tensor.shape}")
 
 
@@ -114,7 +114,7 @@ def render_gaussian2d(
     Returns:
         tensor including rendered points with shape :math:`(*, H, W)`.
     """
-    if not (std.dtype == mean.dtype and std.device == mean.device):
+    if std.dtype != mean.dtype or std.device != mean.device:
         raise TypeError("Expected inputs to have the same dtype and device")
 
     height, width = size

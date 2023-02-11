@@ -81,9 +81,7 @@ def rgb_to_hls(image: Tensor, eps: float = 1e-8) -> Tensor:
     # h = 2.0 * math.pi * (60.0 * h) / 360.0
     h *= math.pi / 3.0  # hue [0, 2*pi]
 
-    if image.requires_grad:
-        return stack([h, l_, s], -3)
-    return image_hls
+    return stack([h, l_, s], -3) if image.requires_grad else image_hls
 
 
 def hls_to_rgb(image: Tensor) -> Tensor:

@@ -30,7 +30,7 @@ def distance_transform(image: torch.Tensor, kernel_size: int = 3, h: float = 0.3
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"image type is not a torch.Tensor. Got {type(image)}")
 
-    if not len(image.shape) == 4:
+    if len(image.shape) != 4:
         raise ValueError(f"Invalid image shape, we expect BxCxHxW. Got: {image.shape}")
 
     if kernel_size % 2 == 0:

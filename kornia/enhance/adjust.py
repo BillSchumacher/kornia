@@ -556,11 +556,11 @@ def adjust_sigmoid(image: Tensor, cutoff: float = 0.5, gain: float = 10, inv: bo
     """
     KORNIA_CHECK_IS_TENSOR(image, "Expected shape (*, H, W)")
 
-    if inv:
-        img_adjust = 1 - 1 / (1 + (gain * (cutoff - image)).exp())
-    else:
-        img_adjust = 1 / (1 + (gain * (cutoff - image)).exp())
-    return img_adjust
+    return (
+        1 - 1 / (1 + (gain * (cutoff - image)).exp())
+        if inv
+        else 1 / (1 + (gain * (cutoff - image)).exp())
+    )
 
 
 def adjust_log(image: Tensor, gain: float = 1, inv: bool = False, clip_output: bool = True) -> Tensor:
@@ -588,11 +588,7 @@ def adjust_log(image: Tensor, gain: float = 1, inv: bool = False, clip_output: b
     """
     KORNIA_CHECK_IS_TENSOR(image, "Expected shape (*, H, W)")
 
-    if inv:
-        img_adjust = (2**image - 1) * gain
-    else:
-        img_adjust = (1 + image).log2() * gain
-
+    img_adjust = (2**image - 1) * gain if inv else (1 + image).log2() * gain
     # truncate between pixel values
     if clip_output:
         img_adjust = img_adjust.clamp(min=0.0, max=1.0)
@@ -620,7 +616,7 @@ def _solarize(input: Tensor, thresholds: Union[float, Tensor] = 0.5) -> Tensor:
         raise TypeError(f"The factor should be either a float or Tensor. " f"Got {type(thresholds)}")
 
     if isinstance(thresholds, Tensor) and len(thresholds.shape) != 0:
-        if not (input.size(0) == len(thresholds) and len(thresholds.shape) == 1):
+        if input.size(0) != len(thresholds) or len(thresholds.shape) != 1:
             raise AssertionError(f"thresholds must be a 1-d vector of shape ({input.size(0)},). Got {thresholds}")
         # TODO: I am not happy about this line, but no easy to do batch-wise operation
         thresholds = thresholds.to(input.device).to(input.dtype)
@@ -684,7 +680,7 @@ def solarize(
             raise AssertionError(f"The value of 'addition' is between -0.5 and 0.5. Got {additions}.")
 
         if isinstance(additions, Tensor) and len(additions.shape) != 0:
-            if not (input.size(0) == len(additions) and len(additions.shape) == 1):
+            if input.size(0) != len(additions) or len(additions.shape) != 1:
                 raise AssertionError(f"additions must be a 1-d vector of shape ({input.size(0)},). Got {additions}")
             # TODO: I am not happy about this line, but no easy to do batch-wise operation
             additions = additions.to(input.device).to(input.dtype)
@@ -862,9 +858,7 @@ def _blend_one(input1: Tensor, input2: Tensor, factor: Tensor) -> Tensor:
         return input2
     diff = (input2 - input1) * factor
     res = input1 + diff
-    if factor > 0.0 and factor < 1.0:
-        return res
-    return torch.clamp(res, 0, 1)
+    return res if factor > 0.0 and factor < 1.0 else torch.clamp(res, 0, 1)
 
 
 def _build_lut(histo, step):

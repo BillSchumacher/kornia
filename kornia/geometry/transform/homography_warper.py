@@ -103,7 +103,7 @@ class HomographyWarper(nn.Module):
                 normalized_coordinates=self.normalized_coordinates,
             )
         elif _warped_grid is not None:
-            if not _warped_grid.device == patch_src.device:
+            if _warped_grid.device != patch_src.device:
                 raise TypeError(
                     "Patch and warped grid must be on the same device. \
                                  Got patch.device: {} warped_grid.device: {}. Whether \

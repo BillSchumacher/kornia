@@ -63,12 +63,10 @@ def gaussian_blur2d(
         bs = sigma.shape[0]
         kernel_x = get_gaussian_kernel1d(ks[1], sigma[:, 1].view(bs, 1))
         kernel_y = get_gaussian_kernel1d(ks[0], sigma[:, 0].view(bs, 1))
-        out = filter2d_separable(input, kernel_x, kernel_y, border_type)
+        return filter2d_separable(input, kernel_x, kernel_y, border_type)
     else:
         kernel = get_gaussian_kernel2d(kernel_size, sigma)
-        out = filter2d(input, kernel, border_type)
-
-    return out
+        return filter2d(input, kernel, border_type)
 
 
 class GaussianBlur2d(Module):

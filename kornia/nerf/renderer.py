@@ -25,9 +25,7 @@ class VolumeRenderer(torch.nn.Module):
 
         weights = trans * alpha  # (*, N, 1)
 
-        rgbs_rendered = torch.sum(weights * rgbs, dim=-2)  # (*, 3)
-
-        return rgbs_rendered
+        return torch.sum(weights * rgbs, dim=-2)
 
     def forward(self, rgbs: Tensor, densities: Tensor, points_3d: Tensor) -> Tensor:
         raise NotImplementedError

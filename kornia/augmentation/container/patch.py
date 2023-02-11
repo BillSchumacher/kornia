@@ -213,7 +213,7 @@ class PatchSequential(ImageSequential):
             grid_size = self.grid_size
         window_size = (input.size(-2) // grid_size[-2], input.size(-1) // grid_size[-1])
         stride = window_size
-        return extract_tensor_patches(input, window_size, stride)
+        return extract_tensor_patches(input, stride, stride)
 
     def restore_from_patches(
         self, patches: Tensor, grid_size: Tuple[int, int] = (4, 4), pad: Optional[Tuple[int, int, int, int]] = None
@@ -245,18 +245,17 @@ class PatchSequential(ImageSequential):
         if not self.patchwise_apply:
             params = self.generate_parameters(torch.Size([1, batch_shape[0] * batch_shape[1], *batch_shape[2:]]))
             indices = torch.arange(0, batch_shape[0] * batch_shape[1])
-            out_param = [PatchParamItem(indices.tolist(), p) for p, _ in params]
-            # "append" of "list" does not return a value
+            return [PatchParamItem(indices.tolist(), p) for p, _ in params]
+                # "append" of "list" does not return a value
         elif not self.same_on_batch:
             params = self.generate_parameters(torch.Size([batch_shape[0] * batch_shape[1], 1, *batch_shape[2:]]))
-            out_param = [PatchParamItem([i], p) for p, i in params]
-            # "append" of "list" does not return a value
+            return [PatchParamItem([i], p) for p, i in params]
+                # "append" of "list" does not return a value
         else:
             params = self.generate_parameters(torch.Size([batch_shape[1], batch_shape[0], *batch_shape[2:]]))
             indices = torch.arange(0, batch_shape[0] * batch_shape[1], step=batch_shape[1])
-            out_param = [PatchParamItem((indices + i).tolist(), p) for p, i in params]
-            # "append" of "list" does not return a value
-        return out_param
+            return [PatchParamItem((indices + i).tolist(), p) for p, i in params]
+                # "append" of "list" does not return a value
 
     def generate_parameters(self, batch_shape: torch.Size) -> Iterator[Tuple[ParamItem, int]]:
         """Get multiple forward sequence but maximumly one mix augmentation in between.
@@ -276,7 +275,7 @@ class PatchSequential(ImageSequential):
                         yield ParamItem(s[0], s[1].forward_parameters(torch.Size(batch_shape[1:]))), i
                     else:
                         yield ParamItem(s[0], None), i
-        elif not self.same_on_batch and not self.random_apply:
+        elif not self.same_on_batch:
             for i, nchild in enumerate(self.named_children()):
                 if isinstance(nchild[1], (_AugmentationBase, SequentialBase, MixAugmentationBaseV2)):
                     yield ParamItem(nchild[0], nchild[1].forward_parameters(torch.Size(batch_shape[1:]))), i

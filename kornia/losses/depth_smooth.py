@@ -44,19 +44,19 @@ def inverse_depth_smoothness_loss(idepth: torch.Tensor, image: torch.Tensor) -> 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Input image type is not a torch.Tensor. Got {type(image)}")
 
-    if not len(idepth.shape) == 4:
+    if len(idepth.shape) != 4:
         raise ValueError(f"Invalid idepth shape, we expect BxCxHxW. Got: {idepth.shape}")
 
-    if not len(image.shape) == 4:
+    if len(image.shape) != 4:
         raise ValueError(f"Invalid image shape, we expect BxCxHxW. Got: {image.shape}")
 
-    if not idepth.shape[-2:] == image.shape[-2:]:
+    if idepth.shape[-2:] != image.shape[-2:]:
         raise ValueError(f"idepth and image shapes must be the same. Got: {idepth.shape} and {image.shape}")
 
-    if not idepth.device == image.device:
+    if idepth.device != image.device:
         raise ValueError(f"idepth and image must be in the same device. Got: {idepth.device} and {image.device}")
 
-    if not idepth.dtype == image.dtype:
+    if idepth.dtype != image.dtype:
         raise ValueError(f"idepth and image must be in the same dtype. Got: {idepth.dtype} and {image.dtype}")
 
     # compute the gradients

@@ -23,10 +23,7 @@ def dist_matrix(d1, d2, is_normalized=False):
         return 2 - 2.0 * d1 @ d2.t()
     x_norm = (d1**2).sum(1).view(-1, 1)
     y_norm = (d2**2).sum(1).view(1, -1)
-    # print(x_norm, y_norm)
-    distmat = x_norm + y_norm - 2.0 * d1 @ d2.t()
-    # distmat[torch.isnan(distmat)] = np.inf
-    return distmat
+    return x_norm + y_norm - 2.0 * d1 @ d2.t()
 
 
 def orientation_diff(o1, o2):
@@ -133,5 +130,4 @@ def draw_first_k_couples(k: int, rdims: Tensor, dv: torch.device):
 def random_samples_indices(iters, rdims, dv):
     rands = torch.rand(size=(iters, 2, rdims.shape[0]), device=dv)
     scaled_rands = rands * (rdims - 1e-8).float()
-    rand_samples_rel = scaled_rands.long()
-    return rand_samples_rel
+    return scaled_rands.long()

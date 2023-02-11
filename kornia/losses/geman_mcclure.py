@@ -47,7 +47,10 @@ def geman_mcclure_loss(img1: Tensor, img2: Tensor, reduction: str = "none") -> T
 
     KORNIA_CHECK_SAME_DEVICE(img1, img2)
 
-    KORNIA_CHECK(reduction in ("mean", "sum", "none"), f"Given type of reduction is not supported. Got: {reduction}")
+    KORNIA_CHECK(
+        reduction in {"mean", "sum", "none"},
+        f"Given type of reduction is not supported. Got: {reduction}",
+    )
 
     # compute loss
     loss = 2.0 * (img1 - img2) ** 2 / ((img1 - img2) ** 2 + 4.0)
@@ -57,8 +60,6 @@ def geman_mcclure_loss(img1: Tensor, img2: Tensor, reduction: str = "none") -> T
         loss = loss.mean()
     elif reduction == "sum":
         loss = loss.sum()
-    elif reduction == "none":
-        pass
     return loss
 
 

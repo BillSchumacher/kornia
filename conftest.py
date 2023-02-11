@@ -15,17 +15,15 @@ def get_test_devices() -> Dict[str, torch.device]:
     Return:
         dict(str, torch.device): list with devices names.
     """
-    devices: Dict[str, torch.device] = {}
-    devices["cpu"] = torch.device("cpu")
+    devices: Dict[str, torch.device] = {"cpu": torch.device("cpu")}
     if torch.cuda.is_available():
         devices["cuda"] = torch.device("cuda:0")
     if kornia.xla_is_available():
         import torch_xla.core.xla_model as xm
 
         devices["tpu"] = xm.xla_device()
-    if hasattr(torch.backends, 'mps'):
-        if torch.backends.mps.is_available():
-            devices["mps"] = torch.device("mps")
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        devices["mps"] = torch.device("mps")
     return devices
 
 
@@ -35,11 +33,12 @@ def get_test_dtypes() -> Dict[str, torch.dtype]:
     Return:
         dict(str, torch.dtype): list with dtype names.
     """
-    dtypes: Dict[str, torch.dtype] = {}
-    dtypes["bfloat16"] = torch.bfloat16
-    dtypes["float16"] = torch.float16
-    dtypes["float32"] = torch.float32
-    dtypes["float64"] = torch.float64
+    dtypes: Dict[str, torch.dtype] = {
+        "bfloat16": torch.bfloat16,
+        "float16": torch.float16,
+        "float32": torch.float32,
+        "float64": torch.float64,
+    }
     return dtypes
 
 

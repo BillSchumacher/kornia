@@ -275,7 +275,4 @@ def edge_aware_blur_pool2d(
     input = input[..., 2:-2, 2:-2]
     blurred_input = blurred_input[..., 2:-2, 2:-2]
 
-    # fuse the input image on edges and blurry input everywhere else
-    blurred = dilated_edges * input + (1.0 - dilated_edges) * blurred_input
-
-    return blurred
+    return dilated_edges * input + (1.0 - dilated_edges) * blurred_input

@@ -34,13 +34,12 @@ class Keypoints:
         if not (2 <= keypoints.ndim <= 3 and keypoints.shape[-1:] == (2,)):
             raise ValueError(f"Keypoints shape must be (N, 2) or (B, N, 2). Got {keypoints.shape}.")
 
-        self._is_batched = False if keypoints.ndim == 2 else True
+        self._is_batched = keypoints.ndim != 2
 
         self._data = keypoints
 
     def __getitem__(self, key) -> "Keypoints":
-        new_obj = type(self)(self._data[key], False)
-        return new_obj
+        return type(self)(self._data[key], False)
 
     def __setitem__(self, key, value: "Keypoints") -> "Keypoints":
         self._data[key] = value._data
@@ -70,11 +69,7 @@ class Keypoints:
         values: Union[Tensor, "Keypoints"],
         inplace: bool = False,
     ) -> "Keypoints":
-        if inplace:
-            _data = self._data
-        else:
-            _data = self._data.clone()
-
+        _data = self._data if inplace else self._data.clone()
         if isinstance(values, Keypoints):
             _data.index_put_(indices, values.data)
         else:
@@ -93,7 +88,7 @@ class Keypoints:
         Args:
             padding_size: (B, 4)
         """
-        if not (len(padding_size.shape) == 2 and padding_size.size(1) == 4):
+        if len(padding_size.shape) != 2 or padding_size.size(1) != 4:
             raise RuntimeError(f"Expected padding_size as (B, 4). Got {padding_size.shape}.")
         self._data[..., 0] += padding_size[..., :1]  # left padding
         self._data[..., 1] += padding_size[..., 2:3]  # top padding
@@ -105,7 +100,7 @@ class Keypoints:
         Args:
             padding_size: (B, 4)
         """
-        if not (len(padding_size.shape) == 2 and padding_size.size(1) == 4):
+        if len(padding_size.shape) != 2 or padding_size.size(1) != 4:
             raise RuntimeError(f"Expected padding_size as (B, 4). Got {padding_size.shape}.")
         self._data[..., 0] -= padding_size[..., :1]  # left padding
         self._data[..., 1] -= padding_size[..., 2:3]  # top padding
@@ -221,13 +216,12 @@ class Keypoints3D:
         if not (2 <= keypoints.ndim <= 3 and keypoints.shape[-1:] == (3,)):
             raise ValueError(f"Keypoints shape must be (N, 3) or (B, N, 3). Got {keypoints.shape}.")
 
-        self._is_batched = False if keypoints.ndim == 2 else True
+        self._is_batched = keypoints.ndim != 2
 
         self._data = keypoints
 
     def __getitem__(self, key) -> "Keypoints3D":
-        new_obj = type(self)(self._data[key], False)
-        return new_obj
+        return type(self)(self._data[key], False)
 
     def __setitem__(self, key, value: "Keypoints3D") -> "Keypoints3D":
         self._data[key] = value._data

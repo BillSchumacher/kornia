@@ -64,7 +64,7 @@ class Hyperplane(Module):
         # return p - self.signed_distance(p) * self.normal
 
     @classmethod
-    def from_vector(self, n: Vector3, e: Vector3) -> "Hyperplane":
+    def from_vector(cls, n: Vector3, e: Vector3) -> "Hyperplane":
         normal: Vector3 = n
         offset = -normal.dot(e)
         return Hyperplane(normal, Scalar(offset))

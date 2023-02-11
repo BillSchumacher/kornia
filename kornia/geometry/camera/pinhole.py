@@ -49,16 +49,15 @@ class PinholeCamera:
     def _check_valid_params(data: Tensor, data_name: str) -> bool:
         if len(data.shape) not in (3, 4) and data.shape[-2:] != (4, 4):  # Shouldn't this be an OR logic than AND?
             raise ValueError(
-                "Argument {} shape must be in the following shape"
-                " Bx4x4 or BxNx4x4. Got {}".format(data_name, data.shape)
+                f"Argument {data_name} shape must be in the following shape Bx4x4 or BxNx4x4. Got {data.shape}"
             )
         return True
 
     @staticmethod
     def _check_valid_shape(data: Tensor, data_name: str) -> bool:
-        if not len(data.shape) == 1:
+        if len(data.shape) != 1:
             raise ValueError(
-                "Argument {} shape must be in the following shape" " B. Got {}".format(data_name, data.shape)
+                f"Argument {data_name} shape must be in the following shape B. Got {data.shape}"
             )
         return True
 
@@ -342,9 +341,7 @@ class PinholeCamera:
 
     # NOTE: just for test. Decide if we keep it.
     @classmethod
-    def from_parameters(
-        self, fx, fy, cx, cy, height, width, tx, ty, tz, batch_size, device: Device, dtype: torch.dtype
-    ):
+    def from_parameters(cls, fx, fy, cx, cy, height, width, tx, ty, tz, batch_size, device: Device, dtype: torch.dtype):
         # create the camera matrix
         intrinsics = torch.zeros(batch_size, 4, 4, device=device, dtype=dtype)
         intrinsics[..., 0, 0] += fx
@@ -363,7 +360,7 @@ class PinholeCamera:
         height_tmp[..., 0] += height
         width_tmp = torch.zeros(batch_size, device=device, dtype=dtype)
         width_tmp[..., 0] += width
-        return self(intrinsics, extrinsics, height_tmp, width_tmp)
+        return cls(intrinsics, extrinsics, height_tmp, width_tmp)
 
 
 class PinholeCamerasList(PinholeCamera):
@@ -393,7 +390,9 @@ class PinholeCamerasList(PinholeCamera):
         intrinsics, extrinsics = [], []
         for pinhole in pinholes:
             if not isinstance(pinhole, PinholeCamera):
-                raise TypeError("Argument pinhole must be from type " "PinholeCamera. Got {}".format(type(pinhole)))
+                raise TypeError(
+                    f"Argument pinhole must be from type PinholeCamera. Got {type(pinhole)}"
+                )
             height.append(pinhole.height)
             width.append(pinhole.width)
             intrinsics.append(pinhole.intrinsics)
@@ -408,10 +407,7 @@ class PinholeCamerasList(PinholeCamera):
     @property
     def num_cameras(self) -> int:
         r"""Return the number of pinholes cameras per batch."""
-        num_cameras: int = -1
-        if self.intrinsics is not None:
-            num_cameras = int(self.intrinsics.shape[1])
-        return num_cameras
+        return int(self.intrinsics.shape[1]) if self.intrinsics is not None else -1
 
     def get_pinhole(self, idx: int) -> PinholeCamera:
         r"""Return a PinholeCamera object with parameters such as Bx4x4."""
@@ -451,7 +447,7 @@ def pinhole_matrix(pinholes: Tensor, eps: float = 1e-6) -> Tensor:
     # warnings.warn("pinhole_matrix will be deprecated in version 0.2, "
     #              "use PinholeCamera.camera_matrix instead",
     #              PendingDeprecationWarning)
-    if not (len(pinholes.shape) == 2 and pinholes.shape[1] == 12):
+    if len(pinholes.shape) != 2 or pinholes.shape[1] != 12:
         raise AssertionError(pinholes.shape)
     # unpack pinhole values
     fx, fy, cx, cy = torch.chunk(pinholes[..., :4], 4, dim=1)  # Nx1
@@ -495,7 +491,7 @@ def inverse_pinhole_matrix(pinhole: Tensor, eps: float = 1e-6) -> Tensor:
     # warnings.warn("inverse_pinhole_matrix will be deprecated in version 0.2, "
     #              "use PinholeCamera.intrinsics_inverse() instead",
     #              PendingDeprecationWarning)
-    if not (len(pinhole.shape) == 2 and pinhole.shape[1] == 12):
+    if len(pinhole.shape) != 2 or pinhole.shape[1] != 12:
         raise AssertionError(pinhole.shape)
     # unpack pinhole values
     fx, fy, cx, cy = torch.chunk(pinhole[..., :4], 4, dim=1)  # Nx1
@@ -539,7 +535,7 @@ def scale_pinhole(pinholes: Tensor, scale: Tensor) -> Tensor:
     # warnings.warn("scale_pinhole will be deprecated in version 0.2, "
     #              "use PinholeCamera.scale() instead",
     #              PendingDeprecationWarning)
-    if not (len(pinholes.shape) == 2 and pinholes.shape[1] == 12):
+    if len(pinholes.shape) != 2 or pinholes.shape[1] != 12:
         raise AssertionError(pinholes.shape)
     if len(scale.shape) != 1:
         raise AssertionError(scale.shape)
@@ -558,7 +554,7 @@ def get_optical_pose_base(pinholes: Tensor) -> Tensor:
     Returns:
         tensor of extrinsic transformation matrices of size (N, 4, 4).
     """
-    if not (len(pinholes.shape) == 2 and pinholes.shape[1] == 12):
+    if len(pinholes.shape) != 2 or pinholes.shape[1] != 12:
         raise AssertionError(pinholes.shape)
     # TODO: where is rtvec_to_pose?
     raise NotImplementedError
@@ -606,7 +602,7 @@ def homography_i_H_ref(pinhole_i: Tensor, pinhole_ref: Tensor) -> Tensor:
         homography_i_H_ref(pinhole_i, pinhole_ref)  # Nx4x4
     """
     # TODO: Add doctest once having `rtvec_to_pose`.
-    if not (len(pinhole_i.shape) == 2 and pinhole_i.shape[1] == 12):
+    if len(pinhole_i.shape) != 2 or pinhole_i.shape[1] != 12:
         raise AssertionError(pinhole_i.shape)
     if pinhole_i.shape != pinhole_ref.shape:
         raise AssertionError(pinhole_ref.shape)
@@ -631,12 +627,18 @@ def pixel2cam(depth: Tensor, intrinsics_inv: Tensor, pixel_coords: Tensor) -> Te
     Returns:
         tensor of shape BxHxWx3 with (x, y, z) cam coordinates.
     """
-    if not len(depth.shape) == 4 and depth.shape[1] == 1:
-        raise ValueError("Input depth has to be in the shape of " "Bx1xHxW. Got {}".format(depth.shape))
-    if not len(intrinsics_inv.shape) == 3:
-        raise ValueError("Input intrinsics_inv has to be in the shape of " "Bx4x4. Got {}".format(intrinsics_inv.shape))
-    if not len(pixel_coords.shape) == 4 and pixel_coords.shape[3] == 3:
-        raise ValueError("Input pixel_coords has to be in the shape of " "BxHxWx3. Got {}".format(intrinsics_inv.shape))
+    if len(depth.shape) != 4 and depth.shape[1] == 1:
+        raise ValueError(
+            f"Input depth has to be in the shape of Bx1xHxW. Got {depth.shape}"
+        )
+    if len(intrinsics_inv.shape) != 3:
+        raise ValueError(
+            f"Input intrinsics_inv has to be in the shape of Bx4x4. Got {intrinsics_inv.shape}"
+        )
+    if len(pixel_coords.shape) != 4 and pixel_coords.shape[3] == 3:
+        raise ValueError(
+            f"Input pixel_coords has to be in the shape of BxHxWx3. Got {intrinsics_inv.shape}"
+        )
     cam_coords: Tensor = transform_points(intrinsics_inv[:, None], pixel_coords)
     return cam_coords * depth.permute(0, 2, 3, 1)
 
@@ -657,12 +659,14 @@ def cam2pixel(cam_coords_src: Tensor, dst_proj_src: Tensor, eps: float = 1e-12) 
     Returns:
         tensor of shape BxHxWx2 with (u, v) pixel coordinates.
     """
-    if not len(cam_coords_src.shape) == 4 and cam_coords_src.shape[3] == 3:
+    if len(cam_coords_src.shape) != 4 and cam_coords_src.shape[3] == 3:
         raise ValueError(
-            "Input cam_coords_src has to be in the shape of " "BxHxWx3. Got {}".format(cam_coords_src.shape)
+            f"Input cam_coords_src has to be in the shape of BxHxWx3. Got {cam_coords_src.shape}"
         )
-    if not len(dst_proj_src.shape) == 3 and dst_proj_src.shape[-2:] == (4, 4):
-        raise ValueError("Input dst_proj_src has to be in the shape of " "Bx4x4. Got {}".format(dst_proj_src.shape))
+    if len(dst_proj_src.shape) != 3 and dst_proj_src.shape[-2:] == (4, 4):
+        raise ValueError(
+            f"Input dst_proj_src has to be in the shape of Bx4x4. Got {dst_proj_src.shape}"
+        )
     # apply projection matrix to points
     point_coords: Tensor = transform_points(dst_proj_src[:, None], cam_coords_src)
     x_coord: Tensor = point_coords[..., 0]
