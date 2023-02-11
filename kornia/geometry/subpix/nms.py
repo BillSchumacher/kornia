@@ -63,9 +63,7 @@ class NonMaximaSuppression2d(Module):
         )
         max_non_center = neighborhood.max(dim=2)[0]
         mask = x > max_non_center
-        if mask_only:
-            return mask
-        return x * (mask.to(x.dtype))
+        return mask if mask_only else x * (mask.to(x.dtype))
 
 
 class NonMaximaSuppression3d(Module):
@@ -141,9 +139,7 @@ class NonMaximaSuppression3d(Module):
                 .max(dim=2, keepdim=False)[0]
             )
             mask = x > max_non_center
-        if mask_only:
-            return mask
-        return x * (mask.to(x.dtype))
+        return mask if mask_only else x * (mask.to(x.dtype))
 
 
 # functional api

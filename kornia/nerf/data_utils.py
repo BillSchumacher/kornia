@@ -105,7 +105,7 @@ class RayDataset(Dataset[RayGroup]):
             raise ValueError(
                 f'Number of images {len(imgs)} does not match number of cameras {self._cameras.batch_size}'
             )
-        if not all(img.shape[0] == 3 for img in imgs):
+        if any(img.shape[0] != 3 for img in imgs):
             raise ValueError('Not all input images have 3 channels')
         for i, (img, height, width) in enumerate(zip(imgs, self._cameras.height, self._cameras.width)):
             if img.shape[1:] != (height, width):
@@ -116,9 +116,9 @@ class RayDataset(Dataset[RayGroup]):
 
     @staticmethod
     def _load_images(img_paths: List[str]) -> List[Tensor]:
-        imgs: List[Tensor] = []
-        for img_path in img_paths:
-            imgs.append(load_image(img_path, ImageLoadType.UNCHANGED))
+        imgs: List[Tensor] = [
+            load_image(img_path, ImageLoadType.UNCHANGED) for img_path in img_paths
+        ]
         return imgs
 
     def __len__(self) -> int:

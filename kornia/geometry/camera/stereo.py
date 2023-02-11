@@ -257,10 +257,10 @@ def _check_Q_matrix(Q_matrix: Tensor):
     if not isinstance(Q_matrix, Tensor):
         raise StereoException(f"Expected 'Q_matrix' to be an instance of Tensor but got {type(Q_matrix)}.")
 
-    if not len(Q_matrix.shape) == 3:
+    if len(Q_matrix.shape) != 3:
         raise StereoException(f"Expected 'Q_matrix' to have 3 dimensions." f"Got {Q_matrix.shape}")
 
-    if not Q_matrix.shape[1:] == (4, 4):
+    if Q_matrix.shape[1:] != (4, 4):
         raise StereoException(
             f"Expected last two dimensions of 'Q_matrix' to be of shape (4, 4)." f"Got {Q_matrix.shape}"
         )
@@ -296,7 +296,7 @@ def reproject_disparity_to_3D(disparity_tensor: Tensor, Q_matrix: Tensor) -> Ten
     points = transform_points(Q_matrix, uvd).reshape(batch_size, rows, cols, 3)
 
     # Final check that everything went well.
-    if not points.shape == (batch_size, rows, cols, 3):
+    if points.shape != (batch_size, rows, cols, 3):
         raise StereoException(
             f"Something went wrong in `reproject_disparity_to_3D`. Expected the final output"
             f"to be of shape {(batch_size, rows, cols, 3)}."

@@ -30,8 +30,7 @@ def get_grid_dict(patch_size: int = 32) -> Dict[str, Tensor]:
     x = kgrid[0, :, :, 0]
     y = kgrid[0, :, :, 1]
     rho, phi = cart2pol(x, y)
-    grid_dict = {'x': x, 'y': y, 'rho': rho, 'phi': phi}
-    return grid_dict
+    return {'x': x, 'y': y, 'rho': rho, 'phi': phi}
 
 
 def get_kron_order(d1: int, d2: int) -> Tensor:
@@ -76,14 +75,13 @@ class MKDGradients(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         if not isinstance(x, Tensor):
             raise TypeError(f"Input type is not a Tensor. Got {type(x)}")
-        if not len(x.shape) == 4:
+        if len(x.shape) != 4:
             raise ValueError(f"Invalid input shape, we expect Bx1xHxW. Got: {x.shape}")
         # Modify 'diff' gradient. Before we had lambda function, but it is not jittable
         grads_xy = -self.grad(x)
         gx = grads_xy[:, :, 0, :, :]
         gy = grads_xy[:, :, 1, :, :]
-        y = torch.cat(cart2pol(gx, gy, self.eps), dim=1)
-        return y
+        return torch.cat(cart2pol(gx, gy, self.eps), dim=1)
 
     def __repr__(self) -> str:
         return self.__class__.__name__
@@ -140,7 +138,7 @@ class VonMisesKernel(nn.Module):
         if not isinstance(x, Tensor):
             raise TypeError(f"Input type is not a Tensor. Got {type(x)}")
 
-        if not len(x.shape) == 4 or x.shape[1] != 1:
+        if len(x.shape) != 4 or x.shape[1] != 1:
             raise ValueError(f"Invalid input shape, we expect Bx1xHxW. Got: {x.shape}")
 
         # TODO: unify the two lines below when pytorch 1.6 support is dropped
@@ -206,14 +204,13 @@ class EmbedGradients(nn.Module):
     def forward(self, grads: Tensor) -> Tensor:
         if not isinstance(grads, Tensor):
             raise TypeError(f"Input type is not a Tensor. Got {type(grads)}")
-        if not len(grads.shape) == 4:
+        if len(grads.shape) != 4:
             raise ValueError(f"Invalid input shape, we expect Bx2xHxW. Got: {grads.shape}")
         mags = grads[:, :1, :, :]
         oris = grads[:, 1:, :, :]
         if self.relative:
             oris = oris - self.phi.to(oris)
-        y = self.kernel(oris) * self.emb_mags(mags)
-        return y
+        return self.kernel(oris) * self.emb_mags(mags)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(patch_size={self.patch_size}, relative={self.relative})"
@@ -246,8 +243,9 @@ def spatial_kernel_embedding(kernel_type, grids: Dict[str, Tensor]) -> Tensor:
 
     # Final precomputed position embedding.
     kron_order = get_kron_order(vm_a.d, vm_b.d)
-    spatial_kernel = emb_a.index_select(0, kron_order[:, 0]) * emb_b.index_select(0, kron_order[:, 1])
-    return spatial_kernel
+    return emb_a.index_select(0, kron_order[:, 0]) * emb_b.index_select(
+        0, kron_order[:, 1]
+    )
 
 
 class ExplicitSpacialEncoding(nn.Module):
@@ -320,8 +318,7 @@ class ExplicitSpacialEncoding(nn.Module):
     def get_gmask(self, sigma: float) -> Tensor:
         """Compute Gaussian mask."""
         norm_rho = self.grid['rho'] / self.grid['rho'].max()
-        gmask = torch.exp(-1 * norm_rho**2 / sigma**2)
-        return gmask
+        return torch.exp(-1 * norm_rho**2 / sigma**2)
 
     def init_kron(self) -> Tuple[Tensor, Tensor]:
         """Initialize helper variables to calculate kronecker."""
@@ -457,7 +454,7 @@ class Whitening(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         if not isinstance(x, Tensor):
             raise TypeError(f"Input type is not a Tensor. Got {type(x)}")
-        if not len(x.shape) == 2:
+        if len(x.shape) != 2:
             raise ValueError(f"Invalid input shape, we expect NxD. Got: {x.shape}")
         x = x - self.mean  # Center the data.
         x = x @ self.evecs  # Apply rotation and/or scaling.
@@ -556,7 +553,7 @@ class MKDDescriptor(nn.Module):
     def forward(self, patches: Tensor) -> Tensor:
         if not isinstance(patches, Tensor):
             raise TypeError(f"Input type is not a Tensor. Got {type(patches)}")
-        if not len(patches.shape) == 4:
+        if len(patches.shape) != 4:
             raise ValueError(f"Invalid input shape, we expect Bx1xHxW. Got: {patches.shape}")
         # Extract gradients.
         g = self.smoothing(patches)
@@ -593,8 +590,7 @@ class MKDDescriptor(nn.Module):
 
 def load_whitening_model(kernel_type: str, training_set: str) -> Dict[str, Any]:
     whitening_models = torch.hub.load_state_dict_from_url(urls[kernel_type], map_location=map_location_to_cpu)
-    whitening_model = whitening_models[training_set]
-    return whitening_model
+    return whitening_models[training_set]
 
 
 class SimpleKD(nn.Module):

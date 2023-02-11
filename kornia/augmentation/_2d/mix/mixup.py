@@ -92,33 +92,49 @@ class RandomMixUpV2(MixAugmentationBaseV2):
         input_permute = input.index_select(dim=0, index=params["mixup_pairs"].to(input.device))
 
         lam = params["mixup_lambdas"].view(-1, 1, 1, 1).expand_as(input).to(input.device)
-        inputs = input * (1 - lam) + input_permute * lam
-        return inputs
+        return input * (1 - lam) + input_permute * lam
 
     def apply_non_transform_class(
         self, input: Tensor, params: Dict[str, Tensor], maybe_flags: Optional[Dict[str, Any]] = None
     ) -> Tensor:
-        out_labels = stack(
+        return stack(
             [
-                input.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                input.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                zeros((len(input),), device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
+                input.to(
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
+                input.to(
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
+                zeros(
+                    (len(input),),
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
             ],
             -1,
         )
-        return out_labels
 
     def apply_transform_class(
         self, input: Tensor, params: Dict[str, Tensor], maybe_flags: Optional[Dict[str, Any]] = None
     ) -> Tensor:
         labels_permute = input.index_select(dim=0, index=params["mixup_pairs"].to(input.device))
 
-        out_labels = stack(
+        return stack(
             [
-                input.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                labels_permute.to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
-                params["mixup_lambdas"].to(device=input.device, dtype=DType.to_torch(int(params["dtype"].item()))),
+                input.to(
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
+                labels_permute.to(
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
+                params["mixup_lambdas"].to(
+                    device=input.device,
+                    dtype=DType.to_torch(int(params["dtype"].item())),
+                ),
             ],
             -1,
         )
-        return out_labels

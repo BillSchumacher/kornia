@@ -6,16 +6,11 @@ import torch.nn as nn
 from kornia.core import Module, Parameter, Tensor, tensor, zeros
 from kornia.utils.helpers import map_location_to_cpu
 
-urls: Dict[str, str] = {}
-urls[
-    "liberty"
-] = "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_LIB.pth"  # pylint: disable
-urls[
-    "notredame"
-] = "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_ND.pth"  # pylint: disable
-urls[
-    "yosemite"
-] = "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_YOS.pth"  # pylint: disable
+urls: Dict[str, str] = {
+    "liberty": "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_LIB.pth",
+    "notredame": "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_ND.pth",
+    "yosemite": "https://github.com/ducha-aiki/Key.Net-Pytorch/raw/main/model/HyNet/weights/HyNet_YOS.pth",
+}
 
 
 class FilterResponseNorm2d(Module):

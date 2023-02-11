@@ -991,9 +991,7 @@ class TestEqualize(BaseTester):
 
         channel = torch.stack([row] * height).to(device, dtype)
         image = torch.stack([channel] * channels).to(device, dtype)
-        batch = torch.stack([image] * batch_size).to(device, dtype)
-
-        return batch
+        return torch.stack([image] * batch_size).to(device, dtype)
 
     @pytest.mark.skip(reason="not implemented yet")
     def test_cardinality(self, device, dtype):
@@ -1086,9 +1084,7 @@ class TestEqualize3D(BaseTester):
         channel = torch.stack([row] * height).to(device, dtype)
         image = torch.stack([channel] * channels).to(device, dtype)
         image3d = torch.stack([image] * depth).transpose(0, 1).to(device, dtype)
-        batch = torch.stack([image3d] * batch_size).to(device, dtype)
-
-        return batch
+        return torch.stack([image3d] * batch_size).to(device, dtype)
 
     @pytest.mark.skip(reason="not implemented yet")
     def test_cardinality(self, device, dtype):

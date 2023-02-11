@@ -34,11 +34,14 @@ def _scale_index_to_scale(max_coords: Tensor, sigmas: Tensor, num_levels: int) -
     # Reshape for grid shape
     B, N, _ = max_coords.shape
     scale_coords = max_coords[:, :, 0].contiguous().view(-1, 1, 1, 1)
-    # Replace the scale_x_y
-    out = concatenate(
-        [sigmas[0, 0] * torch.pow(2.0, scale_coords / float(num_levels)).view(B, N, 1), max_coords[:, :, 1:]], 2
+    return concatenate(
+        [
+            sigmas[0, 0]
+            * torch.pow(2.0, scale_coords / float(num_levels)).view(B, N, 1),
+            max_coords[:, :, 1:],
+        ],
+        2,
     )
-    return out
 
 
 def _create_octave_mask(mask: Tensor, octave_shape: List[int]) -> Tensor:
@@ -280,15 +283,8 @@ class MultiResolutionDetector(Module):
         self.nms = NonMaximaSuppression2d((self.nms_size, self.nms_size))
         self.num_features = num_features
 
-        if ori_module is None:
-            self.ori: Module = PassLAF()
-        else:
-            self.ori = ori_module
-
-        if aff_module is None:
-            self.aff: Module = PassLAF()
-        else:
-            self.aff = aff_module
+        self.ori = PassLAF() if ori_module is None else ori_module
+        self.aff = PassLAF() if aff_module is None else aff_module
 
     def remove_borders(self, score_map: Tensor, borders: int = 15) -> Tensor:
         """It removes the borders of the image to avoid detections on the corners."""
@@ -360,7 +356,10 @@ class MultiResolutionDetector(Module):
 
             num_points_level = int(num_features_per_level[idx_level])
             if idx_level > 0 or (self.num_upscale_levels > 0):
-                nf2 = [num_features_per_level[a] for a in range(0, idx_level + 1 + self.num_upscale_levels)]
+                nf2 = [
+                    num_features_per_level[a]
+                    for a in range(idx_level + 1 + self.num_upscale_levels)
+                ]
                 res_points = tensor(nf2).sum().item()
                 num_points_level = int(res_points)
 

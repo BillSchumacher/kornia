@@ -47,10 +47,10 @@ def KORNIA_CHECK_SHAPE(x: Tensor, shape: List[str]) -> None:
         >>> KORNIA_CHECK_SHAPE(x, ["2","3", "H", "W"])  # explicit
     """
 
-    if '*' == shape[0]:
+    if shape[0] == '*':
         shape_to_check = shape[1:]
         x_shape_to_check = x.shape[-len(shape) + 1 :]
-    elif '*' == shape[-1]:
+    elif shape[-1] == '*':
         shape_to_check = shape[:-1]
         x_shape_to_check = x.shape[: len(shape) - 1]
     else:
@@ -190,7 +190,7 @@ def KORNIA_CHECK_SAME_DEVICES(tensors: List[Tensor], msg: Optional[str] = None):
         >>> KORNIA_CHECK_SAME_DEVICES([x1, x2], "Tensors not in the same device")
     """
     KORNIA_CHECK(isinstance(tensors, list) and len(tensors) >= 1, "Expected a list with at least one element")
-    if not all(tensors[0].device == x.device for x in tensors):
+    if any(tensors[0].device != x.device for x in tensors):
         raise Exception(f"Not same device for tensors. Got: {[x.device for x in tensors]}.\n{msg}")
 
 
@@ -285,7 +285,7 @@ def KORNIA_CHECK_DM_DESC(desc1: Tensor, desc2: Tensor, dm: Tensor):
         >>> dm = torch.rand(4, 8)
         >>> KORNIA_CHECK_DM_DESC(desc1, desc2, dm)
     """
-    if not ((dm.size(0) == desc1.size(0)) and (dm.size(1) == desc2.size(0))):
+    if dm.size(0) != desc1.size(0) or dm.size(1) != desc2.size(0):
         message = f"""distance matrix shape {dm.shape} is not
                       consistent with descriptors shape: desc1 {desc1.shape}
                       desc2 {desc2.shape}"""

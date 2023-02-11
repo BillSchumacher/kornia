@@ -354,7 +354,7 @@ class TestYuv420ToRgb(BaseTester):
     def test_smoke(self, device, dtype):
         H, W = 4, 6
         imgy = torch.rand(1, H, W, device=device, dtype=dtype)
-        imguv = torch.rand(2, int(H / 2), int(W / 2), device=device, dtype=dtype)
+        imguv = torch.rand(2, H // 2, W // 2, device=device, dtype=dtype)
         assert isinstance(kornia.color.yuv420_to_rgb(imgy, imguv), torch.Tensor)
 
     @pytest.mark.parametrize("shape", [(1, 3, 4, 4), (2, 3, 2, 4), (3, 3, 4, 2), (3, 2, 2)])
@@ -435,14 +435,22 @@ class TestYuv420ToRgb(BaseTester):
     def test_gradcheck(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.rand(B, 1, H, W, device=device, dtype=torch.float64, requires_grad=True)
-        imguv = torch.rand(B, 2, int(H / 2), int(W / 2), device=device, dtype=torch.float64, requires_grad=True)
+        imguv = torch.rand(
+            B,
+            2,
+            H // 2,
+            W // 2,
+            device=device,
+            dtype=torch.float64,
+            requires_grad=True,
+        )
         assert gradcheck(kornia.color.yuv420_to_rgb, (imgy, imguv), raise_exception=True, fast_mode=True)
 
     @pytest.mark.jit
     def test_jit(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.ones(B, 1, H, W, device=device, dtype=dtype)
-        imguv = torch.ones(B, 2, int(H / 2), int(W / 2), device=device, dtype=dtype)
+        imguv = torch.ones(B, 2, H // 2, W // 2, device=device, dtype=dtype)
         op = kornia.color.yuv420_to_rgb
         op_jit = torch.jit.script(op)
         self.assert_close(op(imgy, imguv), op_jit(imgy, imguv))
@@ -450,7 +458,7 @@ class TestYuv420ToRgb(BaseTester):
     def test_module(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.ones(B, 1, H, W, device=device, dtype=dtype)
-        imguv = torch.ones(B, 2, int(H / 2), int(W / 2), device=device, dtype=dtype)
+        imguv = torch.ones(B, 2, H // 2, W // 2, device=device, dtype=dtype)
         ops = kornia.color.Yuv420ToRgb().to(device, dtype)
         fcn = kornia.color.yuv420_to_rgb
         self.assert_close(ops(imgy, imguv), fcn(imgy, imguv))
@@ -460,7 +468,7 @@ class TestYuv422ToRgb(BaseTester):
     def test_smoke(self, device, dtype):
         H, W = 4, 6
         imgy = torch.rand(1, H, W, device=device, dtype=dtype)
-        imguv = torch.rand(2, H, int(W / 2), device=device, dtype=dtype)
+        imguv = torch.rand(2, H, W // 2, device=device, dtype=dtype)
         assert isinstance(kornia.color.yuv422_to_rgb(imgy, imguv), torch.Tensor)
 
     @pytest.mark.parametrize("shape", [(1, 3, 4, 4), (2, 3, 2, 4), (3, 3, 4, 2), (3, 2, 2)])
@@ -514,14 +522,16 @@ class TestYuv422ToRgb(BaseTester):
     def test_gradcheck(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.rand(B, 1, H, W, device=device, dtype=torch.float64, requires_grad=True)
-        imguv = torch.rand(B, 2, H, int(W / 2), device=device, dtype=torch.float64, requires_grad=True)
+        imguv = torch.rand(
+            B, 2, H, W // 2, device=device, dtype=torch.float64, requires_grad=True
+        )
         assert gradcheck(kornia.color.yuv422_to_rgb, (imgy, imguv), raise_exception=True, fast_mode=True)
 
     @pytest.mark.jit
     def test_jit(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.ones(B, 1, H, W, device=device, dtype=dtype)
-        imguv = torch.ones(B, 2, H, int(W / 2), device=device, dtype=dtype)
+        imguv = torch.ones(B, 2, H, W // 2, device=device, dtype=dtype)
         op = kornia.color.yuv422_to_rgb
         op_jit = torch.jit.script(op)
         self.assert_close(op(imgy, imguv), op_jit(imgy, imguv))
@@ -529,7 +539,7 @@ class TestYuv422ToRgb(BaseTester):
     def test_module(self, device, dtype):
         B, H, W = 2, 4, 4
         imgy = torch.ones(B, 1, H, W, device=device, dtype=dtype)
-        imguv = torch.ones(B, 2, H, int(W / 2), device=device, dtype=dtype)
+        imguv = torch.ones(B, 2, H, W // 2, device=device, dtype=dtype)
         ops = kornia.color.Yuv422ToRgb().to(device, dtype)
         fcn = kornia.color.yuv422_to_rgb
         self.assert_close(ops(imgy, imguv), fcn(imgy, imguv))

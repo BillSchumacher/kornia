@@ -65,13 +65,13 @@ def ssim(
     if not isinstance(max_val, float):
         raise TypeError(f"Input max_val type is not a float. Got {type(max_val)}")
 
-    if not len(img1.shape) == 4:
+    if len(img1.shape) != 4:
         raise ValueError(f"Invalid img1 shape, we expect BxCxHxW. Got: {img1.shape}")
 
-    if not len(img2.shape) == 4:
+    if len(img2.shape) != 4:
         raise ValueError(f"Invalid img2 shape, we expect BxCxHxW. Got: {img2.shape}")
 
-    if not img1.shape == img2.shape:
+    if img1.shape != img2.shape:
         raise ValueError(f"img1 and img2 shapes must be the same. Got: {img1.shape} and {img2.shape}")
 
     # prepare kernel
@@ -91,9 +91,6 @@ def ssim(
         cropping_shape = _compute_padding([height, width])
         mu1 = _crop(mu1, cropping_shape)
         mu2 = _crop(mu2, cropping_shape)
-    elif padding == 'same':
-        pass
-
     mu1_sq = mu1**2
     mu2_sq = mu2**2
     mu1_mu2 = mu1 * mu2
@@ -106,9 +103,6 @@ def ssim(
         mu_img1_sq = _crop(mu_img1_sq, cropping_shape)
         mu_img2_sq = _crop(mu_img2_sq, cropping_shape)
         mu_img1_img2 = _crop(mu_img1_img2, cropping_shape)
-    elif padding == 'same':
-        pass
-
     # compute local sigma per channel
     sigma1_sq = mu_img1_sq - mu1_sq
     sigma2_sq = mu_img2_sq - mu2_sq

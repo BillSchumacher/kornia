@@ -15,9 +15,15 @@ import kornia as tgm
 def load_data(root_path, sequence_name, frame_id):
     # index paths
     file_name = 'frame_%04d' % (frame_id)
-    image_file = os.path.join(root_path, 'clean', sequence_name, file_name + '.png')
-    depth_file = os.path.join(root_path, 'depth', sequence_name, file_name + '.dpt')
-    camera_file = os.path.join(root_path, 'camdata_left', sequence_name, file_name + '.cam')
+    image_file = os.path.join(
+        root_path, 'clean', sequence_name, f'{file_name}.png'
+    )
+    depth_file = os.path.join(
+        root_path, 'depth', sequence_name, f'{file_name}.dpt'
+    )
+    camera_file = os.path.join(
+        root_path, 'camdata_left', sequence_name, f'{file_name}.cam'
+    )
     # load the actual data
     image_tensor = load_image(image_file)
     depth = load_depth(depth_file)
@@ -83,8 +89,7 @@ class InvDepth(nn.Module):
     def _init_weights(self, height, width):
         r1 = self._min_range
         r2 = self._min_range + (self._max_range - self._min_range) * 0.1
-        w_init = (r1 - r2) * torch.rand(1, 1, height, width) + r2
-        return w_init
+        return (r1 - r2) * torch.rand(1, 1, height, width) + r2
 
     def forward(self):
         return self.w.clamp(min=self._min_range, max=self._max_range)

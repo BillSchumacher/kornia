@@ -270,9 +270,4 @@ def solve_pnp_dlt(
     col_sign_fix = torch.sign(mask * right)
     rot_mat = torch.bmm(ortho, col_sign_fix)
 
-    # Preparing the final output.
-    pred_world_to_cam = torch.cat([rot_mat, temp[:, :3, 3:4]], dim=-1)
-
-    # TODO: Implement algorithm to refine the solution.
-
-    return pred_world_to_cam
+    return torch.cat([rot_mat, temp[:, :3, 3:4]], dim=-1)

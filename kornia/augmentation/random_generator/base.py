@@ -9,8 +9,8 @@ from kornia.core import Device, Module, Tensor
 class _PostInitInjectionMetaClass(type):
     """To inject the ``__post_init__`` function after the creation of each instance."""
 
-    def __call__(cls, *args, **kwargs):
-        obj = type.__call__(cls, *args, **kwargs)
+    def __call__(self, *args, **kwargs):
+        obj = type.__call__(self, *args, **kwargs)
         obj.__post_init__()
         return obj
 

@@ -42,9 +42,7 @@ def oneway_transfer_error(pts1: Tensor, pts2: Tensor, H: Tensor, squared: bool =
     # dist = \sum_{i} ( d(x', Hx)**2)
     pts1_in_2: Tensor = transform_points(H, pts1)
     error_squared: Tensor = (pts1_in_2 - pts2).pow(2).sum(dim=-1)
-    if squared:
-        return error_squared
-    return (error_squared + eps).sqrt()
+    return error_squared if squared else (error_squared + eps).sqrt()
 
 
 def symmetric_transfer_error(pts1: Tensor, pts2: Tensor, H: Tensor, squared: bool = True, eps: float = 1e-8) -> Tensor:
@@ -78,9 +76,7 @@ def symmetric_transfer_error(pts1: Tensor, pts2: Tensor, H: Tensor, squared: boo
     back: Tensor = oneway_transfer_error(pts2, pts1, H_inv, True, eps)
     good_H_reshape: Tensor = good_H.view(-1, 1).expand_as(there)
     out = (there + back) * good_H_reshape.to(there.dtype) + max_num * (~good_H_reshape).to(there.dtype)
-    if squared:
-        return out
-    return (out + eps).sqrt()
+    return out if squared else (out + eps).sqrt()
 
 
 def line_segment_transfer_error_one_way(ls1: Tensor, ls2: Tensor, H: Tensor, squared: bool = False) -> Tensor:
@@ -162,27 +158,26 @@ def find_homography_dlt(
         A = A.transpose(-2, -1) @ A
     else:
         # We should use provided weights
-        if not (len(weights.shape) == 2 and weights.shape == points1.shape[:2]):
+        if len(weights.shape) != 2 or weights.shape != points1.shape[:2]:
             raise AssertionError(weights.shape)
         w_diag = torch.diag_embed(weights.unsqueeze(dim=-1).repeat(1, 1, 2).reshape(weights.shape[0], -1))
         A = A.transpose(-2, -1) @ w_diag @ A
 
-    if solver == 'svd':
+    if solver == 'lu':
+        B = torch.ones(A.shape[0], A.shape[1], device=device, dtype=dtype)
+        sol, _, _ = safe_solve_with_mask(B, A)
+        H = sol.reshape(-1, 3, 3)
+    elif solver == 'svd':
         try:
             _, _, V = _torch_svd_cast(A)
         except RuntimeError:
             warnings.warn('SVD did not converge', RuntimeWarning)
             return torch.empty((points1_norm.size(0), 3, 3), device=device, dtype=dtype)
         H = V[..., -1].view(-1, 3, 3)
-    elif solver == 'lu':
-        B = torch.ones(A.shape[0], A.shape[1], device=device, dtype=dtype)
-        sol, _, _ = safe_solve_with_mask(B, A)
-        H = sol.reshape(-1, 3, 3)
     else:
         raise NotImplementedError
     H = transform2.inverse() @ (H @ transform1)
-    H_norm = H / (H[..., -1:, -1:] + eps)
-    return H_norm
+    return H / (H[..., -1:, -1:] + eps)
 
 
 def find_homography_dlt_iterated(
@@ -240,8 +235,7 @@ def sample_is_valid_for_homography(points1: Tensor, points2: Tensor) -> Tensor:
     right_sign = (
         torch.cross(dst_perm[..., 1:2, :], dst_perm[..., 2:3, :]) @ dst_perm[..., 0:1, :].permute(0, 1, 3, 2)
     ).sign()
-    sample_is_valid = (left_sign == right_sign).view(-1, 4).min(dim=1)[0]
-    return sample_is_valid
+    return (left_sign == right_sign).view(-1, 4).min(dim=1)[0]
 
 
 def find_homography_lines_dlt(ls1: Tensor, ls2: Tensor, weights: Optional[Tensor] = None) -> Tensor:
@@ -297,7 +291,7 @@ def find_homography_lines_dlt(ls1: Tensor, ls2: Tensor, weights: Optional[Tensor
         A = A.transpose(-2, -1) @ A
     else:
         # We should use provided weights
-        if not ((len(weights.shape) == 2) and (weights.shape == ls1.shape[:2])):
+        if len(weights.shape) != 2 or weights.shape != ls1.shape[:2]:
             raise AssertionError(weights.shape)
         w_diag = torch.diag_embed(weights.unsqueeze(dim=-1).repeat(1, 1, 2).reshape(weights.shape[0], -1))
         A = A.transpose(-2, -1) @ w_diag @ A
@@ -310,8 +304,7 @@ def find_homography_lines_dlt(ls1: Tensor, ls2: Tensor, weights: Optional[Tensor
 
     H = V[..., -1].view(-1, 3, 3)
     H = transform2.inverse() @ (H @ transform1)
-    H_norm = H / (H[..., -1:, -1:] + eps)
-    return H_norm
+    return H / (H[..., -1:, -1:] + eps)
 
 
 def find_homography_lines_dlt_iterated(

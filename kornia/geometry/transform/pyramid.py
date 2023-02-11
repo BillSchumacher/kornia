@@ -329,9 +329,7 @@ def build_pyramid(
     )
 
     # create empty list and append the original image
-    pyramid: List[Tensor] = []
-    pyramid.append(input)
-
+    pyramid: List[Tensor] = [input]
     # iterate and downsample
     for _ in range(max_level - 1):
         img_curr: Tensor = pyramid[-1]

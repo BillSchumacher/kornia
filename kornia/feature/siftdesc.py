@@ -28,8 +28,7 @@ def get_sift_pooling_kernel(ksize: int = 25) -> Tensor:
     """
     ks_2: float = float(ksize) / 2.0
     xc2 = ks_2 - (torch.arange(ksize).float() + 0.5 - ks_2).abs()
-    kernel = torch.ger(xc2, xc2) / (ks_2**2)
-    return kernel
+    return torch.ger(xc2, xc2) / (ks_2**2)
 
 
 def get_sift_bin_ksize_stride_pad(patch_size: int, num_spatial_bins: int) -> Tuple[int, int, int]:
@@ -153,8 +152,11 @@ class SIFTDescriptor(Module):
 
         ang_bins = concatenate(
             [
-                self.pk((bo0_big == i).to(input.dtype) * wo0_big + (bo1_big == i).to(input.dtype) * wo1_big)
-                for i in range(0, self.num_ang_bins)
+                self.pk(
+                    (bo0_big == i).to(input.dtype) * wo0_big
+                    + (bo1_big == i).to(input.dtype) * wo1_big
+                )
+                for i in range(self.num_ang_bins)
             ],
             1,
         )
@@ -287,9 +289,10 @@ class DenseSIFTDescriptor(Module):
         ang_bins = concatenate(
             [
                 self.bin_pooling_kernel(
-                    (bo0_big == i).to(input.dtype) * wo0_big + (bo1_big == i).to(input.dtype) * wo1_big
+                    (bo0_big == i).to(input.dtype) * wo0_big
+                    + (bo1_big == i).to(input.dtype) * wo1_big
                 )
-                for i in range(0, self.num_ang_bins)
+                for i in range(self.num_ang_bins)
             ],
             1,
         )

@@ -81,11 +81,11 @@ def filter2d(
     KORNIA_CHECK_SHAPE(kernel, ['B', 'H', 'W'])
 
     KORNIA_CHECK(
-        str(border_type).lower() in _VALID_BORDERS,
+        border_type.lower() in _VALID_BORDERS,
         f'Invalid border, gotcha {border_type}. Expected one of {_VALID_BORDERS}',
     )
     KORNIA_CHECK(
-        str(padding).lower() in _VALID_PADDING,
+        padding.lower() in _VALID_PADDING,
         f'Invalid padding mode, gotcha {padding}. Expected one of {_VALID_PADDING}',
     )
 
@@ -112,12 +112,11 @@ def filter2d(
     # convolve the tensor with the kernel.
     output = F.conv2d(input, tmp_kernel, groups=tmp_kernel.size(0), padding=0, stride=1)
 
-    if padding == 'same':
-        out = output.view(b, c, h, w)
-    else:
-        out = output.view(b, c, h - height + 1, w - width + 1)
-
-    return out
+    return (
+        output.view(b, c, h, w)
+        if padding == 'same'
+        else output.view(b, c, h - height + 1, w - width + 1)
+    )
 
 
 def filter2d_separable(
@@ -170,8 +169,7 @@ def filter2d_separable(
                   [0., 0., 0., 0., 0.]]]])
     """
     out_x = filter2d(input, kernel_x[..., None, :], border_type, normalized, padding)
-    out = filter2d(out_x, kernel_y[..., None], border_type, normalized, padding)
-    return out
+    return filter2d(out_x, kernel_y[..., None], border_type, normalized, padding)
 
 
 def filter3d(input: Tensor, kernel: Tensor, border_type: str = 'replicate', normalized: bool = False) -> Tensor:
@@ -240,7 +238,7 @@ def filter3d(input: Tensor, kernel: Tensor, border_type: str = 'replicate', norm
     KORNIA_CHECK_SHAPE(kernel, ['B', 'D', 'H', 'W'])
 
     KORNIA_CHECK(
-        str(border_type).lower() in _VALID_BORDERS,
+        border_type.lower() in _VALID_BORDERS,
         f'Invalid border, gotcha {border_type}. Expected one of {_VALID_BORDERS}',
     )
 

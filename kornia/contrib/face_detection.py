@@ -381,7 +381,10 @@ class _PriorBox:
             if self.steps[i] != math.pow(2, (i + 3)):
                 raise ValueError("steps must be [8,16,32,64]")
 
-        self.feature_map_2th = [int(int((self.image_size[0] + 1) / 2) / 2), int(int((self.image_size[1] + 1) / 2) / 2)]
+        self.feature_map_2th = [
+            int((self.image_size[0] + 1) / 2) // 2,
+            int((self.image_size[1] + 1) / 2) // 2,
+        ]
         self.feature_map_3th = [int(self.feature_map_2th[0] / 2), int(self.feature_map_2th[1] / 2)]
         self.feature_map_4th = [int(self.feature_map_3th[0] / 2), int(self.feature_map_3th[1] / 2)]
         self.feature_map_5th = [int(self.feature_map_4th[0] / 2), int(self.feature_map_4th[1] / 2)]

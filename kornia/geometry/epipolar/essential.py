@@ -33,11 +33,11 @@ def essential_from_fundamental(F_mat: torch.Tensor, K1: torch.Tensor, K2: torch.
     Returns:
         The essential matrix with shape :math:`(*, 3, 3)`.
     """
-    if not (len(F_mat.shape) >= 2 and F_mat.shape[-2:] == (3, 3)):
+    if len(F_mat.shape) < 2 or F_mat.shape[-2:] != (3, 3):
         raise AssertionError(F_mat.shape)
-    if not (len(K1.shape) >= 2 and K1.shape[-2:] == (3, 3)):
+    if len(K1.shape) < 2 or K1.shape[-2:] != (3, 3):
         raise AssertionError(K1.shape)
-    if not (len(K2.shape) >= 2 and K2.shape[-2:] == (3, 3)):
+    if len(K2.shape) < 2 or K2.shape[-2:] != (3, 3):
         raise AssertionError(K2.shape)
     if not len(F_mat.shape[:-2]) == len(K1.shape[:-2]) == len(K2.shape[:-2]):
         raise AssertionError
@@ -102,13 +102,13 @@ def essential_from_Rt(R1: torch.Tensor, t1: torch.Tensor, R2: torch.Tensor, t2: 
     Returns:
         The Essential matrix with the shape :math:`(*, 3, 3)`.
     """
-    if not (len(R1.shape) >= 2 and R1.shape[-2:] == (3, 3)):
+    if len(R1.shape) < 2 or R1.shape[-2:] != (3, 3):
         raise AssertionError(R1.shape)
-    if not (len(t1.shape) >= 2 and t1.shape[-2:] == (3, 1)):
+    if len(t1.shape) < 2 or t1.shape[-2:] != (3, 1):
         raise AssertionError(t1.shape)
-    if not (len(R2.shape) >= 2 and R2.shape[-2:] == (3, 3)):
+    if len(R2.shape) < 2 or R2.shape[-2:] != (3, 3):
         raise AssertionError(R2.shape)
-    if not (len(t2.shape) >= 2 and t2.shape[-2:] == (3, 1)):
+    if len(t2.shape) < 2 or t2.shape[-2:] != (3, 1):
         raise AssertionError(t2.shape)
 
     # first compute the camera relative motion
@@ -133,7 +133,7 @@ def motion_from_essential(E_mat: torch.Tensor) -> Tuple[torch.Tensor, torch.Tens
         The rotation and translation containing the four possible combination for the retrieved motion.
         The tuple is as following :math:`[(*, 4, 3, 3), (*, 4, 3, 1)]`.
     """
-    if not (len(E_mat.shape) >= 2 and E_mat.shape[-2:] == (3, 3)):
+    if len(E_mat.shape) < 2 or E_mat.shape[-2:] != (3, 3):
         raise AssertionError(E_mat.shape)
 
     # decompose the essential matrix by its possible poses
@@ -178,15 +178,15 @@ def motion_from_essential_choose_solution(
         The rotation and translation plus the 3d triangulated points.
         The tuple is as following :math:`[(*, 3, 3), (*, 3, 1), (*, N, 3)]`.
     """
-    if not (len(E_mat.shape) >= 2 and E_mat.shape[-2:] == (3, 3)):
+    if len(E_mat.shape) < 2 or E_mat.shape[-2:] != (3, 3):
         raise AssertionError(E_mat.shape)
-    if not (len(K1.shape) >= 2 and K1.shape[-2:] == (3, 3)):
+    if len(K1.shape) < 2 or K1.shape[-2:] != (3, 3):
         raise AssertionError(K1.shape)
-    if not (len(K2.shape) >= 2 and K2.shape[-2:] == (3, 3)):
+    if len(K2.shape) < 2 or K2.shape[-2:] != (3, 3):
         raise AssertionError(K2.shape)
-    if not (len(x1.shape) >= 2 and x1.shape[-1] == 2):
+    if len(x1.shape) < 2 or x1.shape[-1] != 2:
         raise AssertionError(x1.shape)
-    if not (len(x2.shape) >= 2 and x2.shape[-1] == 2):
+    if len(x2.shape) < 2 or x2.shape[-1] != 2:
         raise AssertionError(x2.shape)
     if not len(E_mat.shape[:-2]) == len(K1.shape[:-2]) == len(K2.shape[:-2]):
         raise AssertionError
@@ -276,13 +276,13 @@ def relative_camera_motion(
         A tuple with the relative rotation matrix and
         translation vector with the shape of :math:`[(*, 3, 3), (*, 3, 1)]`.
     """
-    if not (len(R1.shape) >= 2 and R1.shape[-2:] == (3, 3)):
+    if len(R1.shape) < 2 or R1.shape[-2:] != (3, 3):
         raise AssertionError(R1.shape)
-    if not (len(t1.shape) >= 2 and t1.shape[-2:] == (3, 1)):
+    if len(t1.shape) < 2 or t1.shape[-2:] != (3, 1):
         raise AssertionError(t1.shape)
-    if not (len(R2.shape) >= 2 and R2.shape[-2:] == (3, 3)):
+    if len(R2.shape) < 2 or R2.shape[-2:] != (3, 3):
         raise AssertionError(R2.shape)
-    if not (len(t2.shape) >= 2 and t2.shape[-2:] == (3, 1)):
+    if len(t2.shape) < 2 or t2.shape[-2:] != (3, 1):
         raise AssertionError(t2.shape)
 
     # compute first the relative rotation

@@ -119,5 +119,4 @@ class StraightThroughEstimator(nn.Module):
             raise NotImplementedError(
                 "Only Tensor is supported at the moment. Feel free to contribute to https://github.com/kornia/kornia."
             )
-        output = STEFunction.apply(input, out, self.grad_fn)
-        return output
+        return STEFunction.apply(input, out, self.grad_fn)

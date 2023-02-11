@@ -34,7 +34,10 @@ def total_variation(img: Tensor, reduction: str = "sum") -> Tensor:
         raise TypeError(f"Not a Tensor type. Got: {type(img)}")
 
     KORNIA_CHECK_SHAPE(img, ["*", "H", "W"])
-    KORNIA_CHECK(reduction in ("mean", "sum"), f"Expected reduction to be one of 'mean'/'sum', but got '{reduction}'.")
+    KORNIA_CHECK(
+        reduction in {"mean", "sum"},
+        f"Expected reduction to be one of 'mean'/'sum', but got '{reduction}'.",
+    )
 
     pixel_dif1 = img[..., 1:, :] - img[..., :-1, :]
     pixel_dif2 = img[..., :, 1:] - img[..., :, :-1]

@@ -278,14 +278,9 @@ def deepcopy_dict(params: Dict[str, Any]) -> Dict[str, Any]:
 
     Support tensor copying here.
     """
-    out = {}
-    for k, v in params.items():
-        # NOTE: Only Tensors created explicitly by the user (graph leaves) support the deepcopy protocol
-        if isinstance(v, Tensor):
-            out.update({k: v.clone()})
-        else:
-            out.update({k: v})
-    return out
+    return {
+        k: v.clone() if isinstance(v, Tensor) else v for k, v in params.items()
+    }
 
 
 def override_parameters(
@@ -310,13 +305,12 @@ def override_parameters(
     for k, v in params_override.items():
         if k in params_override:
             out[k] = v
+        elif if_none_exist == 'ignore':
+            pass
+        elif if_none_exist == 'raise':
+            raise RuntimeError(f"Param `{k}` not existed in `{params_override}`.")
         else:
-            if if_none_exist == 'ignore':
-                pass
-            elif if_none_exist == 'raise':
-                raise RuntimeError(f"Param `{k}` not existed in `{params_override}`.")
-            else:
-                raise ValueError(f"`{if_none_exist}` is not a valid option.")
+            raise ValueError(f"`{if_none_exist}` is not a valid option.")
     return out
 
 
@@ -353,7 +347,7 @@ def preprocess_boxes(input: Union[Tensor, Boxes], mode="vertices_plus") -> Boxes
     # TODO: We may allow list here.
     # input is BxNx4x2 or Boxes.
     if isinstance(input, Tensor):
-        if not (len(input.shape) == 4 and input.shape[2:] == torch.Size([4, 2])):
+        if len(input.shape) != 4 or input.shape[2:] != torch.Size([4, 2]):
             raise RuntimeError(f"Only BxNx4x2 tensor is supported. Got {input.shape}.")
         input = Boxes.from_tensor(input, mode=mode)
     if not isinstance(input, Boxes):
@@ -365,7 +359,7 @@ def preprocess_keypoints(input: Union[Tensor, Keypoints]) -> Keypoints:
     """Preprocess input keypoints."""
     # TODO: We may allow list here.
     if isinstance(input, Tensor):
-        if not (len(input.shape) == 3 and input.shape[1:] == torch.Size([2])):
+        if len(input.shape) != 3 or input.shape[1:] != torch.Size([2]):
             raise RuntimeError(f"Only BxNx2 tensor is supported. Got {input.shape}.")
         input = Keypoints(input, False)
     if isinstance(input, Keypoints):

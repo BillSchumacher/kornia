@@ -52,8 +52,7 @@ def get_laf_center(LAF: Tensor) -> Tensor:
         >>> output = get_laf_center(input)  # BxNx2
     """
     KORNIA_CHECK_LAF(LAF)
-    out = LAF[..., 2]
-    return out
+    return LAF[..., 2]
 
 
 def get_laf_orientation(LAF: Tensor) -> Tensor:
@@ -95,10 +94,13 @@ def set_laf_orientation(LAF: Tensor, angles_degrees: Tensor) -> Tensor:
     KORNIA_CHECK_LAF(LAF)
     B, N = LAF.shape[:2]
     rotmat = angle_to_rotation_matrix(angles_degrees).view(B * N, 2, 2)
-    laf_out = concatenate(
-        [torch.bmm(make_upright(LAF).view(B * N, 2, 3)[:, :2, :2], rotmat), LAF.view(B * N, 2, 3)[:, :2, 2:]], dim=2
+    return concatenate(
+        [
+            torch.bmm(make_upright(LAF).view(B * N, 2, 3)[:, :2, :2], rotmat),
+            LAF.view(B * N, 2, 3)[:, :2, 2:],
+        ],
+        dim=2,
     ).view(B, N, 2, 3)
-    return laf_out
 
 
 def laf_from_center_scale_ori(xy: Tensor, scale: Optional[Tensor] = None, ori: Optional[Tensor] = None) -> Tensor:
@@ -123,8 +125,7 @@ def laf_from_center_scale_ori(xy: Tensor, scale: Optional[Tensor] = None, ori: O
     KORNIA_CHECK_SHAPE(scale, ["B", "N", "1", "1"])
     KORNIA_CHECK_SHAPE(ori, ["B", "N", "1"])
     unscaled_laf = concatenate([angle_to_rotation_matrix(ori.squeeze(-1)), xy.unsqueeze(-1)], dim=-1)
-    laf = scale_laf(unscaled_laf, scale)
-    return laf
+    return scale_laf(unscaled_laf, scale)
 
 
 def scale_laf(laf: Tensor, scale_coef: Union[float, Tensor]) -> Tensor:
@@ -150,7 +151,7 @@ def scale_laf(laf: Tensor, scale_coef: Union[float, Tensor]) -> Tensor:
         >>> output = scale_laf(input, scale)  # BxNx2x3
     """
     if (type(scale_coef) is not float) and (type(scale_coef) is not Tensor):
-        raise TypeError("scale_coef should be float or Tensor " "Got {}".format(type(scale_coef)))
+        raise TypeError(f"scale_coef should be float or Tensor Got {type(scale_coef)}")
     KORNIA_CHECK_LAF(laf)
     centerless_laf = laf[:, :, :2, :2]
     return concatenate([scale_coef * centerless_laf, laf[:, :, :, 2:]], dim=3)
@@ -216,10 +217,10 @@ def ellipse_to_laf(ells: Tensor) -> Tensor:
     """
     n_dims = len(ells.size())
     if n_dims != 3:
-        raise TypeError("ellipse shape should be must be [BxNx5]. " "Got {}".format(ells.size()))
+        raise TypeError(f"ellipse shape should be must be [BxNx5]. Got {ells.size()}")
     B, N, dim = ells.size()
     if dim != 5:
-        raise TypeError("ellipse shape should be must be [BxNx5]. " "Got {}".format(ells.size()))
+        raise TypeError(f"ellipse shape should be must be [BxNx5]. Got {ells.size()}")
     # Previous implementation was incorrectly using Cholesky decomp as matrix sqrt
     # ell_shape = concatenate([concatenate([ells[..., 2:3], ells[..., 3:4]], dim=2).unsqueeze(2),
     #                       concatenate([ells[..., 3:4], ells[..., 4:5]], dim=2).unsqueeze(2)], dim=2).view(-1, 2, 2)
@@ -237,8 +238,7 @@ def ellipse_to_laf(ells: Tensor) -> Tensor:
     a22 = ells[..., 4:5].abs().sqrt()
     a21 = ells[..., 3:4] / (a11 + a22).clamp(1e-9)
     A = stack([a11, a12, a21, a22], dim=-1).view(B, N, 2, 2).inverse()
-    out = concatenate([A, ells[..., :2].view(B, N, 2, 1)], dim=3)
-    return out
+    return concatenate([A, ells[..., :2].view(B, N, 2, 1)], dim=3)
 
 
 def laf_to_boundary_points(LAF: Tensor, n_pts: int = 50) -> Tensor:
@@ -411,10 +411,7 @@ def extract_patches_simple(
         patches with shape :math:`(B, N, CH, PS,PS)`.
     """
     KORNIA_CHECK_LAF(laf)
-    if normalize_lafs_before_extraction:
-        nlaf = normalize_laf(laf, img)
-    else:
-        nlaf = laf
+    nlaf = normalize_laf(laf, img) if normalize_lafs_before_extraction else laf
     _, ch, h, w = img.size()
     B, N, _, _ = laf.size()
     out = []
@@ -446,10 +443,7 @@ def extract_patches_from_pyramid(
         patches with shape :math:`(B, N, CH, PS,PS)`.
     """
     KORNIA_CHECK_LAF(laf)
-    if normalize_lafs_before_extraction:
-        nlaf = normalize_laf(laf, img)
-    else:
-        nlaf = laf
+    nlaf = normalize_laf(laf, img) if normalize_lafs_before_extraction else laf
     B, N, _, _ = laf.size()
     _, ch, h, w = img.size()
     scale = 2.0 * get_laf_scale(denormalize_laf(nlaf, img)) / float(PS)
@@ -509,8 +503,10 @@ def laf_to_three_points(laf: Tensor):
         threepts :math:`(B, N, 2, 3)`.
     """
     KORNIA_CHECK_LAF(laf)
-    three_pts = stack([laf[..., 2] + laf[..., 0], laf[..., 2] + laf[..., 1], laf[..., 2]], dim=-1)
-    return three_pts
+    return stack(
+        [laf[..., 2] + laf[..., 0], laf[..., 2] + laf[..., 1], laf[..., 2]],
+        dim=-1,
+    )
 
 
 def laf_from_three_points(threepts: Tensor):
@@ -524,8 +520,14 @@ def laf_from_three_points(threepts: Tensor):
     Returns:
         laf :math:`(B, N, 2, 3)`.
     """
-    laf = stack([threepts[..., 0] - threepts[..., 2], threepts[..., 1] - threepts[..., 2], threepts[..., 2]], dim=-1)
-    return laf
+    return stack(
+        [
+            threepts[..., 0] - threepts[..., 2],
+            threepts[..., 1] - threepts[..., 2],
+            threepts[..., 2],
+        ],
+        dim=-1,
+    )
 
 
 def perspective_transform_lafs(trans_01: Tensor, lafs_1: Tensor) -> Tensor:
@@ -575,13 +577,13 @@ def perspective_transform_lafs(trans_01: Tensor, lafs_1: Tensor) -> Tensor:
     if not torch.is_tensor(trans_01):
         raise TypeError("Input type is not a Tensor")
 
-    if not trans_01.device == lafs_1.device:
+    if trans_01.device != lafs_1.device:
         raise TypeError("Tensor must be in the same device")
 
-    if not trans_01.shape[0] == lafs_1.shape[0]:
+    if trans_01.shape[0] != lafs_1.shape[0]:
         raise ValueError("Input batch size must be the same for both tensors")
 
-    if (not (trans_01.shape[-1] == 3)) or (not (trans_01.shape[-2] == 3)):
+    if trans_01.shape[-1] != 3 or trans_01.shape[-2] != 3:
         raise ValueError("Transformation should be homography")
 
     bs, n, _, _ = lafs_1.size()

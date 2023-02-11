@@ -352,11 +352,7 @@ def adalam_core(
             idxs = torch.stack([absolute_im1idx, absolute_im2idx], dim=1)
         else:
             idxs, out_scores = _no_match(scores1)
-        if return_dist:
-            return idxs, out_scores
-        else:
-            return idxs
-
+        return (idxs, out_scores) if return_dist else idxs
     # Format neighborhoods for parallel RANSACs
     im1loc, im2loc, ransidx, tokp1, tokp2 = extract_local_patterns(
         fnn12, local_neighs_mask, k1, k2, im1seeds, im2seeds, scores1

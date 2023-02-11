@@ -141,9 +141,6 @@ class VideoSequential(ImageSequential):
         if self.data_format == "BCTHW":
             # Convert (B, C, T, H, W) to (B, T, C, H, W)
             input = input.transpose(1, 2)
-        if self.data_format == "BTCHW":
-            pass
-
         input = input.reshape(-1, *input.shape[2:])
         return input
 
@@ -151,9 +148,6 @@ class VideoSequential(ImageSequential):
         input = input.view(-1, frame_num, *input.shape[1:])
         if self.data_format == "BCTHW":
             input = input.transpose(1, 2)
-        if self.data_format == "BTCHW":
-            pass
-
         return input
 
     def forward_parameters(self, batch_shape: torch.Size) -> List[ParamItem]:
@@ -185,8 +179,13 @@ class VideoSequential(ImageSequential):
                     for k, v in mod_param.items():
                         # TODO: revise ColorJiggle and ColorJitter order param in the future to align the standard.
                         if k == "order" and (
-                            isinstance(module, kornia.augmentation.ColorJiggle)
-                            or isinstance(module, kornia.augmentation.ColorJitter)
+                            isinstance(
+                                module,
+                                (
+                                    kornia.augmentation.ColorJiggle,
+                                    kornia.augmentation.ColorJitter,
+                                ),
+                            )
                         ):
                             continue
                         if k == "forward_input_shape":
@@ -336,6 +335,4 @@ class VideoSequential(ImageSequential):
                 self._params = self.forward_parameters(input.shape)
             params = self._params
 
-        output = self.transform_inputs(input, params, extra_args=extra_args)
-
-        return output
+        return self.transform_inputs(input, params, extra_args=extra_args)

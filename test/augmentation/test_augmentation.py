@@ -1697,7 +1697,7 @@ class TestRandomBrightness(BaseTester):
 
         expected = input
 
-        self.assert_close(f(input), expected)
+        self.assert_close(f(expected), expected)
 
     def test_random_brightness_batch_sequential(self, device, dtype):
         if dtype == torch.float16:
@@ -1708,7 +1708,7 @@ class TestRandomBrightness(BaseTester):
         input = torch.rand(2, 3, 5, 5, device=device, dtype=dtype)  # 2 x 3 x 5 x 5
         expected = input
 
-        self.assert_close(f(input), expected, low_tolerance=True)
+        self.assert_close(f(expected), expected, low_tolerance=True)
 
     def test_gradcheck(self, device, dtype):
         input = torch.rand((3, 5, 5), device=device, dtype=dtype).unsqueeze(0)  # 3 x 3
@@ -1798,7 +1798,7 @@ class TestRandomContrast(BaseTester):
 
         expected = input
 
-        self.assert_close(f(input), expected)
+        self.assert_close(f(expected), expected)
 
     def test_random_contrast_batch_sequential(self, device, dtype):
         if dtype == torch.float16:
@@ -1809,7 +1809,7 @@ class TestRandomContrast(BaseTester):
         input = torch.rand(2, 3, 5, 5, device=device, dtype=dtype)  # 2 x 3 x 5 x 5
         expected = input
 
-        self.assert_close(f(input), expected, low_tolerance=True)
+        self.assert_close(f(expected), expected, low_tolerance=True)
 
     def test_gradcheck(self, device, dtype):
         input = torch.rand((3, 5, 5), device=device, dtype=dtype).unsqueeze(0)  # 3 x 3
@@ -1907,7 +1907,7 @@ class TestRandomHue(BaseTester):
 
         expected = input
 
-        self.assert_close(f(input), expected)
+        self.assert_close(f(expected), expected)
 
     def test_random_hue_batch_sequential(self, device, dtype):
         if dtype == torch.float16:
@@ -1918,7 +1918,7 @@ class TestRandomHue(BaseTester):
         input = torch.rand(2, 3, 5, 5, device=device, dtype=dtype)  # 2 x 3 x 5 x 5
         expected = input
 
-        self.assert_close(f(input), expected, low_tolerance=True)
+        self.assert_close(f(expected), expected, low_tolerance=True)
 
     def test_gradcheck(self, device, dtype):
         input = torch.rand((3, 5, 5), device=device, dtype=dtype).unsqueeze(0)  # 3 x 3
@@ -2016,7 +2016,7 @@ class TestRandomSaturation(BaseTester):
 
         expected = input
 
-        self.assert_close(f(input), expected)
+        self.assert_close(f(expected), expected)
 
     def test_random_saturation_batch_sequential(self, device, dtype):
         if dtype == torch.float16:
@@ -2027,7 +2027,7 @@ class TestRandomSaturation(BaseTester):
         input = torch.rand(2, 3, 5, 5, device=device, dtype=dtype)  # 2 x 3 x 5 x 5
         expected = input
 
-        self.assert_close(f(input), expected, low_tolerance=True)
+        self.assert_close(f(expected), expected, low_tolerance=True)
 
     def test_gradcheck(self, device, dtype):
         input = torch.rand((3, 5, 5), device=device, dtype=dtype).unsqueeze(0)  # 3 x 3
@@ -2202,7 +2202,7 @@ class TestRandomGamma(BaseTester):
 
         expected = input
 
-        self.assert_close(f(input), expected)
+        self.assert_close(f(expected), expected)
 
     def test_random_gamma_batch_sequential(self, device, dtype):
         if dtype == torch.float16:
@@ -2213,7 +2213,7 @@ class TestRandomGamma(BaseTester):
         input = torch.rand(2, 3, 5, 5, device=device, dtype=dtype)  # 2 x 3 x 5 x 5
         expected = input
 
-        self.assert_close(f(input), expected, low_tolerance=True)
+        self.assert_close(f(expected), expected, low_tolerance=True)
 
     def test_gradcheck(self, device, dtype):
         input = torch.rand((3, 5, 5), device=device, dtype=dtype).unsqueeze(0)  # 3 x 3

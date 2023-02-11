@@ -125,14 +125,15 @@ class ImageSequential(SequentialBase):
             random_apply = (random_apply[0], max_length + 1)
         else:
             raise ValueError(f"Non-readable random_apply. Got {random_apply}.")
-        if random_apply is not False and not (
-            isinstance(random_apply, (tuple,))
+        if (
+            random_apply is False
+            or isinstance(random_apply, (tuple,))
             and len(random_apply) == 2
             and isinstance(random_apply[0], (int,))
-            and isinstance(random_apply[0], (int,))
         ):
+            return random_apply
+        else:
             raise AssertionError(f"Expect a tuple of (int, int). Got {random_apply}.")
-        return random_apply
 
     def get_random_forward_sequence(self, with_mix: bool = True) -> Tuple[Iterator[Tuple[str, Module]], bool]:
         """Get a forward sequence when random apply is in need.
@@ -161,12 +162,16 @@ class ImageSequential(SequentialBase):
         )
 
         mix_added = False
-        if with_mix and len(mix_indices) != 0:
-            # Make the selection fair.
-            if (torch.rand(1) < ((len(mix_indices) + len(indices)) / len(self))).item():
-                indices[-1] = torch.multinomial((~multinomial_weights.bool()).float(), 1)
-                indices = indices[torch.randperm(len(indices))]
-                mix_added = True
+        if (
+            with_mix
+            and len(mix_indices) != 0
+            and (
+                torch.rand(1) < ((len(mix_indices) + len(indices)) / len(self))
+            ).item()
+        ):
+            indices[-1] = torch.multinomial((~multinomial_weights.bool()).float(), 1)
+            indices = indices[torch.randperm(len(indices))]
+            mix_added = True
 
         return self.get_children_by_indices(indices), mix_added
 
@@ -238,7 +243,6 @@ class ImageSequential(SequentialBase):
         res_mat: Optional[Tensor] = None
         for (_, module), param in zip(named_modules, params if params is not None else []):
             if isinstance(module, (GeometricAugmentationBase2D,)) and isinstance(param.data, dict):
-                to_apply = param.data['batch_prob']
                 ori_shape = input.shape
                 try:
                     input = module.transform_tensor(input)
@@ -249,6 +253,7 @@ class ImageSequential(SequentialBase):
                 if recompute:
                     mat: Tensor = self.identity_matrix(input)
                     flags = override_parameters(module.flags, extra_args, in_place=False)
+                    to_apply = param.data['batch_prob']
                     mat[to_apply] = module.compute_transformation(input[to_apply], param.data, flags)
                 else:
                     mat = as_tensor(module._transform_matrix, device=input.device, dtype=input.dtype)

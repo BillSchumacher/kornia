@@ -13,8 +13,9 @@ from kornia.utils.helpers import map_location_to_cpu
 
 from .laf import extract_patches_from_pyramid, get_laf_orientation, set_laf_orientation
 
-urls: Dict[str, str] = {}
-urls["orinet"] = "https://github.com/ducha-aiki/affnet/raw/master/pretrained/OriNet.pth"
+urls: Dict[str, str] = {
+    "orinet": "https://github.com/ducha-aiki/affnet/raw/master/pretrained/OriNet.pth"
+}
 
 
 class PassLAF(nn.Module):
@@ -69,13 +70,12 @@ class PatchDominantGradientOrientation(nn.Module):
             torch.Tensor: angle shape [B]"""
         if not isinstance(patch, torch.Tensor):
             raise TypeError(f"Input type is not a torch.Tensor. Got {type(patch)}")
-        if not len(patch.shape) == 4:
+        if len(patch.shape) != 4:
             raise ValueError(f"Invalid input shape, we expect Bx1xHxW. Got: {patch.shape}")
         _, CH, W, H = patch.size()
         if (W != self.patch_size) or (H != self.patch_size) or (CH != 1):
             raise TypeError(
-                "input shape should be must be [Bx1x{}x{}]. "
-                "Got {}".format(self.patch_size, self.patch_size, patch.size())
+                f"input shape should be must be [Bx1x{self.patch_size}x{self.patch_size}]. Got {patch.size()}"
             )
         self.weighting = self.weighting.to(patch.dtype).to(patch.device)
         self.angular_smooth = self.angular_smooth.to(patch.dtype).to(patch.device)
@@ -95,7 +95,7 @@ class PatchDominantGradientOrientation(nn.Module):
         wo0_big = (1.0 - wo1_big) * mag
         wo1_big = wo1_big * mag
         ang_bins_list = []
-        for i in range(0, self.num_ang_bins):
+        for i in range(self.num_ang_bins):
             ang_bins_i = F.adaptive_avg_pool2d(
                 (bo0_big == i).to(patch.dtype) * wo0_big + (bo1_big == i).to(patch.dtype) * wo1_big, (1, 1)
             )
@@ -103,8 +103,7 @@ class PatchDominantGradientOrientation(nn.Module):
         ang_bins = torch.cat(ang_bins_list, 1).view(-1, 1, self.num_ang_bins)
         ang_bins = self.angular_smooth(ang_bins)
         values, indices = ang_bins.view(-1, self.num_ang_bins).max(1)
-        angle = -((2.0 * pi * indices.to(patch.dtype) / float(self.num_ang_bins)) - pi)
-        return angle
+        return -((2.0 * pi * indices.to(patch.dtype) / float(self.num_ang_bins)) - pi)
 
 
 class OriNet(nn.Module):
@@ -179,8 +178,7 @@ class OriNet(nn.Module):
         Returns:
             patch: (torch.Tensor) shape [B]"""
         xy = self.features(self._normalize_input(patch)).view(-1, 2)
-        angle = torch.atan2(xy[:, 0] + 1e-8, xy[:, 1] + self.eps)
-        return angle
+        return torch.atan2(xy[:, 0] + 1e-8, xy[:, 1] + self.eps)
 
 
 class LAFOrienter(nn.Module):

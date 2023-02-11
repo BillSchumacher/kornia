@@ -99,8 +99,13 @@ class RANSAC(Module):
 
     def estimate_model_from_minsample(self, kp1: Tensor, kp2: Tensor) -> Tensor:
         batch_size, sample_size = kp1.shape[:2]
-        H = self.minimal_solver(kp1, kp2, torch.ones(batch_size, sample_size, dtype=kp1.dtype, device=kp1.device))
-        return H
+        return self.minimal_solver(
+            kp1,
+            kp2,
+            torch.ones(
+                batch_size, sample_size, dtype=kp1.dtype, device=kp1.device
+            ),
+        )
 
     def verify(self, kp1: Tensor, kp2: Tensor, models: Tensor, inl_th: float) -> Tuple[Tensor, Tensor, float]:
         if len(kp1.shape) == 2:
@@ -141,16 +146,20 @@ class RANSAC(Module):
         kp1_inl = kp1[inliers][None]
         kp2_inl = kp2[inliers][None]
         num_inl = kp1_inl.size(1)
-        model = self.polisher_solver(
-            kp1_inl, kp2_inl, torch.ones(1, num_inl, dtype=kp1_inl.dtype, device=kp1_inl.device)
+        return self.polisher_solver(
+            kp1_inl,
+            kp2_inl,
+            torch.ones(1, num_inl, dtype=kp1_inl.dtype, device=kp1_inl.device),
         )
-        return model
 
     def validate_inputs(self, kp1: Tensor, kp2: Tensor, weights: Optional[Tensor] = None) -> None:
         if self.model_type in ['homography', 'fundamental']:
             KORNIA_CHECK_SHAPE(kp1, ["N", "2"])
             KORNIA_CHECK_SHAPE(kp2, ["N", "2"])
-            if not (kp1.shape[0] == kp2.shape[0]) or (kp1.shape[0] < self.minimal_sample_size):
+            if (
+                kp1.shape[0] != kp2.shape[0]
+                or kp1.shape[0] < self.minimal_sample_size
+            ):
                 raise ValueError(
                     f"kp1 and kp2 should be \
                                  equal shape at at least [{self.minimal_sample_size}, 2], \
@@ -159,7 +168,10 @@ class RANSAC(Module):
         if self.model_type == 'homography_from_linesegments':
             KORNIA_CHECK_SHAPE(kp1, ["N", "2", "2"])
             KORNIA_CHECK_SHAPE(kp2, ["N", "2", "2"])
-            if not (kp1.shape[0] == kp2.shape[0]) or (kp1.shape[0] < self.minimal_sample_size):
+            if (
+                kp1.shape[0] != kp2.shape[0]
+                or kp1.shape[0] < self.minimal_sample_size
+            ):
                 raise ValueError(
                     f"kp1 and kp2 should be \
                                  equal shape at at least [{self.minimal_sample_size}, 2, 2], \
@@ -202,18 +214,16 @@ class RANSAC(Module):
             # Store far-the-best model and (optionally) do a local optimization
             if model_score > best_score_total:
                 # Local optimization
-                for lo_step in range(self.max_lo_iters):
+                for _ in range(self.max_lo_iters):
                     model_lo = self.polish_model(kp1, kp2, inliers)
                     if (model_lo is None) or (len(model_lo) == 0):
                         continue
                     _, inliers_lo, score_lo = self.verify(kp1, kp2, model_lo, self.inl_th)
-                    # print (f"Orig score = {best_model_score}, LO score = {score_lo} TC={num_tc}")
-                    if score_lo > model_score:
-                        model = model_lo.clone()[0]
-                        inliers = inliers_lo.clone()
-                        model_score = score_lo
-                    else:
+                    if score_lo <= model_score:
                         break
+                    model = model_lo.clone()[0]
+                    inliers = inliers_lo.clone()
+                    model_score = score_lo
                 # Now storing the best model
                 best_model_total = model.clone()
                 inliers_best_total = inliers.clone()

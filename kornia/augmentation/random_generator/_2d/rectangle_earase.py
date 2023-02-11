@@ -43,8 +43,7 @@ class RectangleEraseGenerator(RandomGeneratorBase):
         self.value = value
 
     def __repr__(self) -> str:
-        repr = f"scale={self.scale}, resize_to={self.ratio}, value={self.value}"
-        return repr
+        return f"scale={self.scale}, resize_to={self.ratio}, value={self.value}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         scale = as_tensor(self.scale, device=device, dtype=dtype)
@@ -73,7 +72,12 @@ class RectangleEraseGenerator(RandomGeneratorBase):
         batch_size = batch_shape[0]
         height = batch_shape[-2]
         width = batch_shape[-1]
-        if not (type(height) is int and height > 0 and type(width) is int and width > 0):
+        if (
+            type(height) is not int
+            or height <= 0
+            or type(width) is not int
+            or width <= 0
+        ):
             raise AssertionError(f"'height' and 'width' must be integers. Got {height}, {width}.")
 
         _common_param_check(batch_size, same_on_batch)

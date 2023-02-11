@@ -12,11 +12,11 @@ from .utils.coarse_matching import CoarseMatching
 from .utils.fine_matching import FineMatching
 from .utils.position_encoding import PositionEncodingSine
 
-urls: Dict[str, str] = {}
-urls["outdoor"] = "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_outdoor.ckpt"
-urls["indoor_new"] = "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_indoor_ds_new.ckpt"
-urls["indoor"] = "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_indoor.ckpt"
-
+urls: Dict[str, str] = {
+    "outdoor": "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_outdoor.ckpt",
+    "indoor_new": "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_indoor_ds_new.ckpt",
+    "indoor": "http://cmp.felk.cvut.cz/~mishkdmy/models/loftr_indoor.ckpt",
+}
 # Comments: the config below is the one corresponding to the pretrained models
 # Some do not change there anything, unless you want to retrain it.
 
@@ -129,14 +129,12 @@ class LoFTR(Module):
         else:  # handle different input shapes
             (feat_c0, feat_f0), (feat_c1, feat_f1) = self.backbone(data['image0']), self.backbone(data['image1'])
 
-        _data.update(
-            {
-                'hw0_c': feat_c0.shape[2:],
-                'hw1_c': feat_c1.shape[2:],
-                'hw0_f': feat_f0.shape[2:],
-                'hw1_f': feat_f1.shape[2:],
-            }
-        )
+        _data |= {
+            'hw0_c': feat_c0.shape[2:],
+            'hw1_c': feat_c1.shape[2:],
+            'hw0_f': feat_f0.shape[2:],
+            'hw1_f': feat_f1.shape[2:],
+        }
 
         # 2. coarse-level loftr module
         # add featmap with positional encoding, then flatten it to sequence [N, HW, C]

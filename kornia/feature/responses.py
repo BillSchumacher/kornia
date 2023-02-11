@@ -78,7 +78,7 @@ def harris_response(
     if sigmas is not None:
         if not isinstance(sigmas, Tensor):
             raise TypeError(f"sigmas type is not a Tensor. Got {type(sigmas)}")
-        if (not len(sigmas.shape) == 1) or (sigmas.size(0) != input.size(0)):
+        if len(sigmas.shape) != 1 or sigmas.size(0) != input.size(0):
             raise ValueError(f"Invalid sigmas shape, we expect B == input.size(0). Got: {sigmas.shape}")
 
     gradients: Tensor = spatial_gradient(input, grads_mode)
@@ -233,7 +233,7 @@ def hessian_response(input: Tensor, grads_mode: str = 'sobel', sigmas: Optional[
         if not isinstance(sigmas, Tensor):
             raise TypeError(f"sigmas type is not a Tensor. Got {type(sigmas)}")
 
-        if (not len(sigmas.shape) == 1) or (sigmas.size(0) != input.size(0)):
+        if len(sigmas.shape) != 1 or sigmas.size(0) != input.size(0):
             raise ValueError(f"Invalid sigmas shape, we expect B == input.size(0). Got: {sigmas.shape}")
 
     gradients: Tensor = spatial_gradient(input, grads_mode, 2)

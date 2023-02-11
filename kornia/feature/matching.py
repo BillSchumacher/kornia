@@ -23,8 +23,7 @@ def _cdist(d1: torch.Tensor, d2: torch.Tensor) -> torch.Tensor:
 
 
 def _get_default_fginn_params():
-    config = {"th": 0.85, "mutual": False, "spatial_th": 10.0}
-    return config
+    return {"th": 0.85, "mutual": False, "spatial_th": 10.0}
 
 
 def _get_lazy_distance_matrix(desc1: Tensor, desc2: Tensor, dm_: Optional[Tensor] = None):
@@ -38,11 +37,9 @@ def _get_lazy_distance_matrix(desc1: Tensor, desc2: Tensor, dm_: Optional[Tensor
           to each descriptor in desc2, shape of :math:`(B1, B2)`.
     """
     if dm_ is None:
-        dm = _cdist(desc1, desc2)
-    else:
-        KORNIA_CHECK_DM_DESC(desc1, desc2, dm_)
-        dm = dm_
-    return dm
+        return _cdist(desc1, desc2)
+    KORNIA_CHECK_DM_DESC(desc1, desc2, dm_)
+    return dm_
 
 
 def _no_match(dm: Tensor):
@@ -261,7 +258,7 @@ def match_fginn(
     vals = vals_cand[:, 0]
     xy2 = get_laf_center(lafs2).view(-1, 2)
     candidates_xy = xy2[idxs_in_2]
-    kdist = torch.norm(candidates_xy - candidates_xy[0:1], p=2, dim=2)
+    kdist = torch.norm(candidates_xy - candidates_xy[:1], p=2, dim=2)
     fginn_vals = vals_cand[:, 1:] + (kdist[:, 1:] < spatial_th).to(dtype) * BIG_NUMBER
     fginn_vals_best, fginn_idxs_best = fginn_vals.min(dim=1)
 

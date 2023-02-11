@@ -94,12 +94,12 @@ class LocalFeatureTransformer(nn.Module):
             raise ValueError(msg)
 
         for layer, name in zip(self.layers, self.layer_names):
-            if name == 'self':
-                feat0 = layer(feat0, feat0, mask0, mask0)
-                feat1 = layer(feat1, feat1, mask1, mask1)
-            elif name == 'cross':
+            if name == 'cross':
                 feat0 = layer(feat0, feat1, mask0, mask1)
                 feat1 = layer(feat1, feat0, mask1, mask0)
+            elif name == 'self':
+                feat0 = layer(feat0, feat0, mask0, mask0)
+                feat1 = layer(feat1, feat1, mask1, mask1)
             else:
                 raise KeyError
 

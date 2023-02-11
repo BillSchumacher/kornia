@@ -56,8 +56,7 @@ class CutmixGenerator(RandomGeneratorBase):
             raise AssertionError(f"`num_mix` must be an integer greater than 1. Got {num_mix}.")
 
     def __repr__(self) -> str:
-        repr = f"cut_size={self.cut_size}, beta={self.beta}, num_mix={self.num_mix}"
-        return repr
+        return f"cut_size={self.cut_size}, beta={self.beta}, num_mix={self.num_mix}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         if self.beta is None:
@@ -84,7 +83,12 @@ class CutmixGenerator(RandomGeneratorBase):
         height = batch_shape[-2]
         width = batch_shape[-1]
 
-        if not (type(height) is int and height > 0 and type(width) is int and width > 0):
+        if (
+            type(height) is not int
+            or height <= 0
+            or type(width) is not int
+            or width <= 0
+        ):
             raise AssertionError(f"'height' and 'width' must be integers. Got {height}, {width}.")
         _device, _dtype = _extract_device_dtype([self.beta, self.cut_size])
         _common_param_check(batch_size, same_on_batch)
@@ -212,9 +216,14 @@ def random_cutmix_generator(
     _device, _dtype = _extract_device_dtype([beta, cut_size])
     beta = torch.as_tensor(1.0 if beta is None else beta, device=device, dtype=dtype)
     cut_size = torch.as_tensor([0.0, 1.0] if cut_size is None else cut_size, device=device, dtype=dtype)
-    if not (num_mix >= 1 and isinstance(num_mix, (int,))):
+    if num_mix < 1 or not isinstance(num_mix, (int,)):
         raise AssertionError(f"`num_mix` must be an integer greater than 1. Got {num_mix}.")
-    if not (type(height) is int and height > 0 and type(width) is int and width > 0):
+    if (
+        type(height) is not int
+        or height <= 0
+        or type(width) is not int
+        or width <= 0
+    ):
         raise AssertionError(f"'height' and 'width' must be integers. Got {height}, {width}.")
     _joint_range_check(cut_size, 'cut_size', bounds=(0, 1))
     _common_param_check(batch_size, same_on_batch)

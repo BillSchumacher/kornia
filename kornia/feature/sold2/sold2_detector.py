@@ -10,10 +10,9 @@ from kornia.utils import map_location_to_cpu, torch_meshgrid
 
 from .backbones import SOLD2Net
 
-urls: Dict[str, str] = {}
-urls["wireframe"] = "https://www.polybox.ethz.ch/index.php/s/blOrW89gqSLoHOk/download"
-
-
+urls: Dict[str, str] = {
+    "wireframe": "https://www.polybox.ethz.ch/index.php/s/blOrW89gqSLoHOk/download"
+}
 default_detector_cfg = {
     'backbone_cfg': {'input_channel': 1, 'depth': 4, 'num_stacks': 2, 'num_blocks': 1, 'num_classes': 5},
     'use_descriptor': False,
@@ -102,13 +101,12 @@ class SOLD2_detector(Module):
             - ``line_heatmap``: raw line heatmap of shape :math:`(B, H, W)`.
         """
         KORNIA_CHECK_SHAPE(img, ["B", "1", "H", "W"])
-        outputs = {}
-
         # Forward pass of the CNN backbone
         net_outputs = self.model(img)
-        outputs["junction_heatmap"] = net_outputs["junctions"]
-        outputs["line_heatmap"] = net_outputs["heatmap"]
-
+        outputs = {
+            "junction_heatmap": net_outputs["junctions"],
+            "line_heatmap": net_outputs["heatmap"],
+        }
         # Loop through all images
         lines = []
         for junc_prob, heatmap in zip(net_outputs["junctions"], net_outputs["heatmap"]):
@@ -259,7 +257,7 @@ class LineSegmentDetectionModule:
             num_iter = math.ceil(num_cand / group_size)
             sampled_feat_lst = []
             for iter_idx in range(num_iter):
-                if not iter_idx == num_iter - 1:
+                if iter_idx != num_iter - 1:
                     cand_h_ = cand_h[iter_idx * group_size : (iter_idx + 1) * group_size, :]
                     cand_w_ = cand_w[iter_idx * group_size : (iter_idx + 1) * group_size, :]
                     normalized_seg_length_ = normalized_seg_length[iter_idx * group_size : (iter_idx + 1) * group_size]
@@ -483,15 +481,20 @@ class LineSegmentDetectionModule:
         cand_w_floor = torch.floor(cand_w).to(torch.long)
         cand_w_ceil = torch.ceil(cand_w).to(torch.long)
 
-        # Perform the bilinear sampling
-        cand_samples_feat = (
-            heatmap[cand_h_floor, cand_w_floor] * (cand_h_ceil - cand_h) * (cand_w_ceil - cand_w)
-            + heatmap[cand_h_floor, cand_w_ceil] * (cand_h_ceil - cand_h) * (cand_w - cand_w_floor)
-            + heatmap[cand_h_ceil, cand_w_floor] * (cand_h - cand_h_floor) * (cand_w_ceil - cand_w)
-            + heatmap[cand_h_ceil, cand_w_ceil] * (cand_h - cand_h_floor) * (cand_w - cand_w_floor)
+        return (
+            heatmap[cand_h_floor, cand_w_floor]
+            * (cand_h_ceil - cand_h)
+            * (cand_w_ceil - cand_w)
+            + heatmap[cand_h_floor, cand_w_ceil]
+            * (cand_h_ceil - cand_h)
+            * (cand_w - cand_w_floor)
+            + heatmap[cand_h_ceil, cand_w_floor]
+            * (cand_h - cand_h_floor)
+            * (cand_w_ceil - cand_w)
+            + heatmap[cand_h_ceil, cand_w_ceil]
+            * (cand_h - cand_h_floor)
+            * (cand_w - cand_w_floor)
         )
-
-        return cand_samples_feat
 
     def detect_local_max(
         self,
@@ -538,19 +541,17 @@ class LineSegmentDetectionModule:
         sampled_feat = heatmap[points[:, :, :, 0], points[:, :, :, 1]]
         # Filtering using the valid mask
         sampled_feat = sampled_feat * patch_dist_mask.to(torch.float32)
-        if len(sampled_feat) == 0:
-            sampled_feat_lmax = torch.empty(0, self.num_samples)
-        else:
-            sampled_feat_lmax = torch.max(sampled_feat, dim=-1)[0]
-
-        return sampled_feat_lmax
+        return (
+            torch.empty(0, self.num_samples)
+            if len(sampled_feat) == 0
+            else torch.max(sampled_feat, dim=-1)[0]
+        )
 
 
 def line_map_to_segments(junctions: Tensor, line_map: Tensor) -> Tensor:
     """Convert a junction connectivity map to a Nx2x2 tensor of segments."""
     junc_loc1, junc_loc2 = where(torch.triu(line_map))
-    segments = stack([junctions[junc_loc1], junctions[junc_loc2]], 1)
-    return segments
+    return stack([junctions[junc_loc1], junctions[junc_loc2]], 1)
 
 
 def prob_to_junctions(prob: Tensor, dist: float, prob_thresh: float = 0.01, top_k: int = 0) -> Tensor:

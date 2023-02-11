@@ -169,7 +169,7 @@ class AugmentationSequential(ImageSequential):
 
         self.data_keys = [DataKey.get(inp) for inp in data_keys]
 
-        if not all(in_type in DataKey for in_type in self.data_keys):
+        if any(in_type not in DataKey for in_type in self.data_keys):
             raise AssertionError(f"`data_keys` must be in {DataKey}. Got {self.data_keys}.")
 
         if self.data_keys[0] != DataKey.INPUT:
@@ -349,20 +349,19 @@ class AugmentationSequential(ImageSequential):
         in_args = self._arguments_preproc(*args, data_keys=self.transform_op.data_keys)
 
         if params is None:
-            # image data must exist if params is not provided.
-            if DataKey.INPUT in self.transform_op.data_keys:
-                inp = in_args[self.transform_op.data_keys.index(DataKey.INPUT)]
-                if not isinstance(inp, (Tensor,)):
-                    raise ValueError(f"`INPUT` should be a tensor but `{type(inp)}` received.")
-                # A video input shall be BCDHW while an image input shall be BCHW
-                if self.contains_video_sequential or self.contains_3d_augmentation:
-                    _, out_shape = self.autofill_dim(inp, dim_range=(3, 5))
-                else:
-                    _, out_shape = self.autofill_dim(inp, dim_range=(2, 4))
-                params = self.forward_parameters(out_shape)
-            else:
+            if DataKey.INPUT not in self.transform_op.data_keys:
                 raise ValueError("`params` must be provided whilst INPUT is not in data_keys.")
 
+            inp = in_args[self.transform_op.data_keys.index(DataKey.INPUT)]
+            if not isinstance(inp, (Tensor,)):
+                raise ValueError(f"`INPUT` should be a tensor but `{type(inp)}` received.")
+                # A video input shall be BCDHW while an image input shall be BCHW
+            _, out_shape = (
+                self.autofill_dim(inp, dim_range=(3, 5))
+                if self.contains_video_sequential or self.contains_3d_augmentation
+                else self.autofill_dim(inp, dim_range=(2, 4))
+            )
+            params = self.forward_parameters(out_shape)
         outputs: Union[Tensor, List[DataType]] = in_args
         for param in params:
             module = self.get_submodule(param.name)
@@ -435,7 +434,4 @@ class AugmentationSequential(ImageSequential):
     def _postproc_keypoint(
         self, in_arg: DataType, out_arg: Keypoints, dcate: DataKey
     ) -> Union[Tensor, List[Tensor], Keypoints]:
-        if isinstance(in_arg, (Keypoints,)):
-            return out_arg
-        else:
-            return out_arg.to_tensor()
+        return out_arg if isinstance(in_arg, (Keypoints,)) else out_arg.to_tensor()

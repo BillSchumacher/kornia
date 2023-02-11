@@ -172,7 +172,6 @@ def yuv420_to_rgb(imagey: torch.Tensor, imageuv: torch.Tensor) -> torch.Tensor:
 
     if (
         len(imageuv.shape) < 2
-        or len(imagey.shape) < 2
         or imagey.shape[-2] / imageuv.shape[-2] != 2
         or imagey.shape[-1] / imageuv.shape[-1] != 2
     ):
@@ -220,7 +219,7 @@ def yuv422_to_rgb(imagey: torch.Tensor, imageuv: torch.Tensor) -> torch.Tensor:
     if len(imagey.shape) < 2 or imagey.shape[-2] % 2 == 1 or imagey.shape[-1] % 2 == 1:
         raise ValueError(f"Input H&W must be evenly disible by 2. Got {imagey.shape}")
 
-    if len(imageuv.shape) < 2 or len(imagey.shape) < 2 or imagey.shape[-1] / imageuv.shape[-1] != 2:
+    if len(imageuv.shape) < 2 or imagey.shape[-1] / imageuv.shape[-1] != 2:
         raise ValueError(
             f"Input imageuv W must be half the size of the luma plane. " f"Got {imagey.shape} and {imageuv.shape}"
         )

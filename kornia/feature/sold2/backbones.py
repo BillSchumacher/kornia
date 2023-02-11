@@ -45,17 +45,16 @@ class MultitaskHead(Module):
     def __init__(self, input_channels: int):
         super().__init__()
 
-        m = int(input_channels / 4)
+        m = input_channels // 4
         head_size = [[2], [1], [2]]
-        heads = []
-        for output_channels in sum(head_size, []):
-            heads.append(
-                nn.Sequential(
-                    nn.Conv2d(input_channels, m, kernel_size=3, padding=1),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(m, output_channels, kernel_size=1),
-                )
+        heads = [
+            nn.Sequential(
+                nn.Conv2d(input_channels, m, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(m, output_channels, kernel_size=1),
             )
+            for output_channels in sum(head_size, [])
+        ]
         self.heads = nn.ModuleList(heads)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -110,17 +109,13 @@ class Hourglass(Module):
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
     def _make_residual(self, block: Type[Bottleneck2D], num_blocks: int, planes: int) -> Module:
-        layers = []
-        for _ in range(0, num_blocks):
-            layers.append(block(planes * self.expansion, planes))
+        layers = [block(planes * self.expansion, planes) for _ in range(num_blocks)]
         return nn.Sequential(*layers)
 
     def _make_hour_glass(self, block: Type[Bottleneck2D], num_blocks: int, planes: int, depth: int) -> nn.ModuleList:
         hgl = []
         for i in range(depth):
-            res = []
-            for _ in range(3):
-                res.append(self._make_residual(block, num_blocks, planes))
+            res = [self._make_residual(block, num_blocks, planes) for _ in range(3)]
             if i == 0:
                 res.append(self._make_residual(block, num_blocks, planes))
             hgl.append(nn.ModuleList(res))
@@ -137,8 +132,7 @@ class Hourglass(Module):
             low2 = self.hg[n - 1][3](low1)
         low3 = self.hg[n - 1][2](low2)
         up2 = F.interpolate(low3, size=up1.shape[2:])
-        out = up1 + up2
-        return out
+        return up1 + up2
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._hour_glass_forward(self.depth, x)
@@ -197,12 +191,9 @@ class HourglassNet(Module):
         if stride != 1 or self.inplanes != planes * self.expansion:
             downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * self.expansion, kernel_size=1, stride=stride))
 
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers = [block(self.inplanes, planes, stride, downsample)]
         self.inplanes = planes * self.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
+        layers.extend(block(self.inplanes, planes) for _ in range(1, blocks))
         return nn.Sequential(*layers)
 
     def _make_fc(self, inplanes: int, outplanes: int) -> Module:
@@ -236,7 +227,7 @@ class HourglassNet(Module):
 
 
 def hg(**kwargs):
-    model = HourglassNet(
+    return HourglassNet(
         Bottleneck2D,
         head=kwargs.get("head", lambda c_in, c_out: nn.Conv2d(c_in, c_out, 1)),
         depth=kwargs["depth"],
@@ -245,7 +236,6 @@ def hg(**kwargs):
         num_classes=kwargs["num_classes"],
         input_channels=kwargs["input_channels"],
     )
-    return model
 
 
 # [Backbone decoders]
@@ -272,8 +262,7 @@ class SuperpointDecoder(Module):
 
         # Convert from semi-dense to dense heatmap
         junc_prob = softmax(semi, dim=1)
-        junc_pred = pixel_shuffle(junc_prob[:, :-1, :, :], self.grid_size)[:, 0]
-        return junc_pred
+        return pixel_shuffle(junc_prob[:, :-1, :, :], self.grid_size)[:, 0]
 
 
 class PixelShuffleDecoder(Module):
@@ -296,26 +285,28 @@ class PixelShuffleDecoder(Module):
         self.pixshuffle = nn.PixelShuffle(2)
 
         # Process the feature
-        conv_block_lst = []
-        # The input block
-        conv_block_lst.append(
+        conv_block_lst = [
             nn.Sequential(
-                nn.Conv2d(input_feat_dim, self.channel_conf[0], kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(
+                    input_feat_dim,
+                    self.channel_conf[0],
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                ),
                 nn.BatchNorm2d(self.channel_conf[0]),
                 nn.ReLU(inplace=True),
             )
-        )
-
+        ]
         # Intermediate block
-        for channel in self.channel_conf[1:-1]:
-            conv_block_lst.append(
-                nn.Sequential(
-                    nn.Conv2d(channel, channel, kernel_size=3, stride=1, padding=1),
-                    nn.BatchNorm2d(channel),
-                    nn.ReLU(inplace=True),
-                )
+        conv_block_lst.extend(
+            nn.Sequential(
+                nn.Conv2d(channel, channel, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(channel),
+                nn.ReLU(inplace=True),
             )
-
+            for channel in self.channel_conf[1:-1]
+        )
         # Output block
         conv_block_lst.append(
             nn.Sequential(nn.Conv2d(self.channel_conf[-1], output_channel, kernel_size=1, stride=1, padding=0))
@@ -324,9 +315,7 @@ class PixelShuffleDecoder(Module):
 
     def get_channel_conf(self, num_upsample: int) -> List[int]:
         """Get num of channels based on number of upsampling."""
-        if num_upsample == 2:
-            return [256, 64, 16]
-        return [256, 64, 16, 4]
+        return [256, 64, 16] if num_upsample == 2 else [256, 64, 16, 4]
 
     def forward(self, input_features: torch.Tensor) -> torch.Tensor:
         # Iterate til output block
@@ -337,9 +326,7 @@ class PixelShuffleDecoder(Module):
 
         # Output layer
         out = self.conv_block_lst[-1](out)
-        heatmap = softmax(out, dim=1)[:, 1, :, :]
-
-        return heatmap
+        return softmax(out, dim=1)[:, 1, :, :]
 
 
 class SuperpointDescriptor(Module):
@@ -359,9 +346,7 @@ class SuperpointDescriptor(Module):
 
     def forward(self, input_features: torch.Tensor) -> torch.Tensor:
         feat = self.relu(self.convPa(input_features))
-        semi = self.convPb(feat)
-
-        return semi
+        return self.convPb(feat)
 
 
 # [Combination of all previous models in one]

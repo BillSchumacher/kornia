@@ -44,9 +44,15 @@ def load_image(file_name):
 def load_data(root_path, sequence_name, frame_id):
     # index paths
     file_name = 'frame_%04d' % (frame_id)
-    image_file = os.path.join(root_path, 'clean', sequence_name, file_name + '.png')
-    depth_file = os.path.join(root_path, 'depth', sequence_name, file_name + '.dpt')
-    camera_file = os.path.join(root_path, 'camdata_left', sequence_name, file_name + '.cam')
+    image_file = os.path.join(
+        root_path, 'clean', sequence_name, f'{file_name}.png'
+    )
+    depth_file = os.path.join(
+        root_path, 'depth', sequence_name, f'{file_name}.dpt'
+    )
+    camera_file = os.path.join(
+        root_path, 'camdata_left', sequence_name, f'{file_name}.cam'
+    )
     # load the actual data
     image = load_image(image_file)
     depth = load_depth(depth_file)
@@ -98,8 +104,11 @@ def DepthWarperApp():
     # save warped image to disk
     file_name = os.path.join(args.output_dir, f'warped_{args.frame_i_id}_to_{args.frame_ref_id}.png')
     cv2.imwrite(file_name, dgm.utils.tensor_to_image(255.0 * img_vis_warped))
-    cv2.imwrite(file_name + 'mask.png', dgm.utils.tensor_to_image(255.0 * mask))
-    cv2.imwrite(file_name + 'warpedmask.png', dgm.utils.tensor_to_image(255.0 * img_vis_warped_masked))
+    cv2.imwrite(f'{file_name}mask.png', dgm.utils.tensor_to_image(255.0 * mask))
+    cv2.imwrite(
+        f'{file_name}warpedmask.png',
+        dgm.utils.tensor_to_image(255.0 * img_vis_warped_masked),
+    )
 
 
 if __name__ == "__main__":

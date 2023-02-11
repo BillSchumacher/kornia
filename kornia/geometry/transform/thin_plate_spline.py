@@ -62,10 +62,10 @@ def get_tps_transform(points_src: torch.Tensor, points_dst: torch.Tensor) -> Tup
     if not isinstance(points_dst, torch.Tensor):
         raise TypeError(f"Input points_dst is not torch.Tensor. Got {type(points_dst)}")
 
-    if not len(points_src.shape) == 3:
+    if len(points_src.shape) != 3:
         raise ValueError(f"Invalid shape for points_src, expected BxNx2. Got {points_src.shape}")
 
-    if not len(points_dst.shape) == 3:
+    if len(points_dst.shape) != 3:
         raise ValueError(f"Invalid shape for points_dst, expected BxNx2. Got {points_dst.shape}")
 
     device, dtype = points_src.device, points_src.dtype
@@ -134,16 +134,16 @@ def warp_points_tps(
     if not isinstance(affine_weights, torch.Tensor):
         raise TypeError(f"Input affine_weights is not torch.Tensor. Got {type(affine_weights)}")
 
-    if not len(points_src.shape) == 3:
+    if len(points_src.shape) != 3:
         raise ValueError(f"Invalid shape for points_src, expected BxNx2. Got {points_src.shape}")
 
-    if not len(kernel_centers.shape) == 3:
+    if len(kernel_centers.shape) != 3:
         raise ValueError(f"Invalid shape for kernel_centers, expected BxNx2. Got {kernel_centers.shape}")
 
-    if not len(kernel_weights.shape) == 3:
+    if len(kernel_weights.shape) != 3:
         raise ValueError(f"Invalid shape for kernel_weights, expected BxNx2. Got {kernel_weights.shape}")
 
-    if not len(affine_weights.shape) == 3:
+    if len(affine_weights.shape) != 3:
         raise ValueError(f"Invalid shape for affine_weights, expected BxNx2. Got {affine_weights.shape}")
 
     # f_{x|y}(v) = a_0 + [a_x a_y].v + \sum_i w_i * U(||v-u_i||)
@@ -211,16 +211,16 @@ def warp_image_tps(
     if not isinstance(affine_weights, torch.Tensor):
         raise TypeError(f"Input affine_weights is not torch.Tensor. Got {type(affine_weights)}")
 
-    if not len(image.shape) == 4:
+    if len(image.shape) != 4:
         raise ValueError(f"Invalid shape for image, expected BxCxHxW. Got {image.shape}")
 
-    if not len(kernel_centers.shape) == 3:
+    if len(kernel_centers.shape) != 3:
         raise ValueError(f"Invalid shape for kernel_centers, expected BxNx2. Got {kernel_centers.shape}")
 
-    if not len(kernel_weights.shape) == 3:
+    if len(kernel_weights.shape) != 3:
         raise ValueError(f"Invalid shape for kernel_weights, expected BxNx2. Got {kernel_weights.shape}")
 
-    if not len(affine_weights.shape) == 3:
+    if len(affine_weights.shape) != 3:
         raise ValueError(f"Invalid shape for affine_weights, expected BxNx2. Got {affine_weights.shape}")
 
     device, dtype = image.device, image.dtype

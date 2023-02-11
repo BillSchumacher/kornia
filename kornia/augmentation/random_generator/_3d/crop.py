@@ -50,10 +50,13 @@ class CropGenerator3D(RandomGeneratorBase):
         _common_param_check(batch_size, same_on_batch)
         _device, _dtype = _extract_device_dtype([self.size if isinstance(self.size, Tensor) else None])
 
-        if not isinstance(self.size, Tensor):
-            size = tensor(self.size, device=_device, dtype=_dtype).repeat(batch_size, 1)
-        else:
-            size = self.size.to(device=_device, dtype=_dtype)
+        size = (
+            self.size.to(device=_device, dtype=_dtype)
+            if isinstance(self.size, Tensor)
+            else tensor(self.size, device=_device, dtype=_dtype).repeat(
+                batch_size, 1
+            )
+        )
         if size.shape != torch.Size([batch_size, 3]):
             raise AssertionError(
                 "If `size` is a tensor, it must be shaped as (B, 3). "
@@ -104,8 +107,7 @@ class CropGenerator3D(RandomGeneratorBase):
                 size[:, 1] - 1,
                 size[:, 0] - 1,
             )
-        else:
-            if not (
+        elif (
                 len(self.resize_to) == 3
                 and isinstance(self.resize_to[0], (int,))
                 and isinstance(self.resize_to[1], (int,))
@@ -114,7 +116,6 @@ class CropGenerator3D(RandomGeneratorBase):
                 and self.resize_to[1] > 0
                 and self.resize_to[2] > 0
             ):
-                raise AssertionError(f"`resize_to` must be a tuple of 3 positive integers. Got {self.resize_to}.")
             crop_dst = tensor(
                 [
                     [
@@ -132,6 +133,8 @@ class CropGenerator3D(RandomGeneratorBase):
                 dtype=_dtype,
             ).repeat(batch_size, 1, 1)
 
+        else:
+            raise AssertionError(f"`resize_to` must be a tuple of 3 positive integers. Got {self.resize_to}.")
         return dict(src=crop_src.to(device=_device), dst=crop_dst.to(device=_device))
 
 
@@ -163,11 +166,16 @@ def center_crop_generator3d(
     """
     if not isinstance(size, (tuple, list)) and len(size) == 3:
         raise ValueError(f"Input size must be a tuple/list of length 3. Got {size}")
-    if not (
-        type(depth) is int and depth > 0 and type(height) is int and height > 0 and type(width) is int and width > 0
+    if (
+        type(depth) is not int
+        or depth <= 0
+        or type(height) is not int
+        or height <= 0
+        or type(width) is not int
+        or width <= 0
     ):
         raise AssertionError(f"'depth', 'height' and 'width' must be integers. Got {depth}, {height}, {width}.")
-    if not (depth >= size[0] and height >= size[1] and width >= size[2]):
+    if depth < size[0] or height < size[1] or width < size[2]:
         raise AssertionError(f"Crop size must be smaller than input size. Got ({depth}, {height}, {width}) and {size}.")
 
     if batch_size == 0:
@@ -179,11 +187,11 @@ def center_crop_generator3d(
     # compute start/end offsets
     dst_d_half = dst_d / 2
     dst_h_half = dst_h / 2
-    dst_w_half = dst_w / 2
     src_d_half = src_d / 2
     src_h_half = src_h / 2
     src_w_half = src_w / 2
 
+    dst_w_half = dst_w / 2
     start_x = src_w_half - dst_w_half
     start_y = src_h_half - dst_h_half
     start_z = src_d_half - dst_d_half

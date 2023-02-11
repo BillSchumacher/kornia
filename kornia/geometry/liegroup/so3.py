@@ -116,13 +116,11 @@ class So3(Module):
                     [0., 0., 0.]], grad_fn=<WhereBackward0>)
         """
         theta = batched_dot_product(self.q.vec, self.q.vec).sqrt()
-        # NOTE: this differs from https://github.com/strasdat/Sophus/blob/master/sympy/sophus/so3.py#L33
-        omega = where(
+        return where(
             theta[..., None] != 0,
             2 * self.q.real[..., None].acos() * self.q.vec / theta[..., None],
             2 * self.q.vec / self.q.real[..., None],
         )
-        return omega
 
     @staticmethod
     def hat(v) -> Tensor:

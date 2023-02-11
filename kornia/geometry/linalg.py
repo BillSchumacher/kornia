@@ -45,13 +45,17 @@ def compose_transformations(trans_01: torch.Tensor, trans_12: torch.Tensor) -> t
     if not torch.is_tensor(trans_12):
         raise TypeError(f"Input trans_12 type is not a torch.Tensor. Got {type(trans_12)}")
 
-    if not ((trans_01.dim() in (2, 3)) and (trans_01.shape[-2:] == (4, 4))):
-        raise ValueError("Input trans_01 must be a of the shape Nx4x4 or 4x4." " Got {}".format(trans_01.shape))
+    if trans_01.dim() not in (2, 3) or trans_01.shape[-2:] != (4, 4):
+        raise ValueError(
+            f"Input trans_01 must be a of the shape Nx4x4 or 4x4. Got {trans_01.shape}"
+        )
 
-    if not ((trans_12.dim() in (2, 3)) and (trans_12.shape[-2:] == (4, 4))):
-        raise ValueError("Input trans_12 must be a of the shape Nx4x4 or 4x4." " Got {}".format(trans_12.shape))
+    if trans_12.dim() not in (2, 3) or trans_12.shape[-2:] != (4, 4):
+        raise ValueError(
+            f"Input trans_12 must be a of the shape Nx4x4 or 4x4. Got {trans_12.shape}"
+        )
 
-    if not trans_01.dim() == trans_12.dim():
+    if trans_01.dim() != trans_12.dim():
         raise ValueError(f"Input number of dims must match. Got {trans_01.dim()} and {trans_12.dim()}")
 
     # unpack input data
@@ -95,7 +99,7 @@ def inverse_transformation(trans_12):
     """
     if not torch.is_tensor(trans_12):
         raise TypeError(f"Input type is not a torch.Tensor. Got {type(trans_12)}")
-    if not ((trans_12.dim() in (2, 3)) and (trans_12.shape[-2:] == (4, 4))):
+    if trans_12.dim() not in (2, 3) or trans_12.shape[-2:] != (4, 4):
         raise ValueError(f"Input size must be a Nx4x4 or 4x4. Got {trans_12.shape}")
     # unpack input tensor
     rmat_12: torch.Tensor = trans_12[..., :3, 0:3]  # Nx3x3
@@ -141,11 +145,15 @@ def relative_transformation(trans_01: torch.Tensor, trans_02: torch.Tensor) -> t
         raise TypeError(f"Input trans_01 type is not a torch.Tensor. Got {type(trans_01)}")
     if not torch.is_tensor(trans_02):
         raise TypeError(f"Input trans_02 type is not a torch.Tensor. Got {type(trans_02)}")
-    if not ((trans_01.dim() in (2, 3)) and (trans_01.shape[-2:] == (4, 4))):
-        raise ValueError("Input must be a of the shape Nx4x4 or 4x4." " Got {}".format(trans_01.shape))
-    if not ((trans_02.dim() in (2, 3)) and (trans_02.shape[-2:] == (4, 4))):
-        raise ValueError("Input must be a of the shape Nx4x4 or 4x4." " Got {}".format(trans_02.shape))
-    if not trans_01.dim() == trans_02.dim():
+    if trans_01.dim() not in (2, 3) or trans_01.shape[-2:] != (4, 4):
+        raise ValueError(
+            f"Input must be a of the shape Nx4x4 or 4x4. Got {trans_01.shape}"
+        )
+    if trans_02.dim() not in (2, 3) or trans_02.shape[-2:] != (4, 4):
+        raise ValueError(
+            f"Input must be a of the shape Nx4x4 or 4x4. Got {trans_02.shape}"
+        )
+    if trans_01.dim() != trans_02.dim():
         raise ValueError(f"Input number of dims must match. Got {trans_01.dim()} and {trans_02.dim()}")
     trans_10: torch.Tensor = inverse_transformation(trans_01)
     trans_12: torch.Tensor = compose_transformations(trans_10, trans_02)
@@ -173,11 +181,11 @@ def transform_points(trans_01: torch.Tensor, points_1: torch.Tensor) -> torch.Te
     """
     KORNIA_CHECK_IS_TENSOR(trans_01)
     KORNIA_CHECK_IS_TENSOR(points_1)
-    if not trans_01.shape[0] == points_1.shape[0] and trans_01.shape[0] != 1:
+    if trans_01.shape[0] not in [points_1.shape[0], 1]:
         raise ValueError(
             "Input batch size must be the same for both tensors or 1." f"Got {trans_01.shape} and {points_1.shape}"
         )
-    if not trans_01.shape[-1] == (points_1.shape[-1] + 1):
+    if trans_01.shape[-1] != points_1.shape[-1] + 1:
         raise ValueError("Last input dimensions must differ by one unit" f"Got{trans_01} and {points_1}")
 
     # We reshape to BxNxD in case we get more dimensions, e.g., MxBxNxD
@@ -214,10 +222,10 @@ def point_line_distance(point: Tensor, line: Tensor, eps: float = 1e-9) -> Tenso
     KORNIA_CHECK_IS_TENSOR(point)
     KORNIA_CHECK_IS_TENSOR(line)
 
-    if not point.shape[-1] in (2, 3):
+    if point.shape[-1] not in (2, 3):
         raise ValueError(f"pts must be a (*, 2 or 3) tensor. Got {point.shape}")
 
-    if not line.shape[-1] == 3:
+    if line.shape[-1] != 3:
         raise ValueError(f"lines must be a (*, 3) tensor. Got {line.shape}")
 
     numerator = (line[..., 0] * point[..., 0] + line[..., 1] * point[..., 1] + line[..., 2]).abs()

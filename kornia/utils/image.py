@@ -55,7 +55,7 @@ def image_to_tensor(image: "npt.NDArray[Any]", keepdim: bool = True) -> Tensor:
     else:
         raise ValueError(f"Cannot process image with shape {input_shape}")
 
-    return tensor.unsqueeze(0) if not keepdim else tensor
+    return tensor if keepdim else tensor.unsqueeze(0)
 
 
 def image_list_to_tensor(images: List["npt.NDArray[Any]"]) -> Tensor:
@@ -78,9 +78,7 @@ def image_list_to_tensor(images: List["npt.NDArray[Any]"]) -> Tensor:
     if len(images[0].shape) != 3:
         raise ValueError("Input images must be three dimensional arrays")
 
-    list_of_tensors: List[Tensor] = []
-    for image in images:
-        list_of_tensors.append(image_to_tensor(image))
+    list_of_tensors: List[Tensor] = [image_to_tensor(image) for image in images]
     tensor: Tensor = torch.stack(list_of_tensors)
     return tensor
 
@@ -176,11 +174,7 @@ def tensor_to_image(tensor: Tensor, keepdim: bool = False) -> "npt.NDArray[Any]"
         pass
     elif len(input_shape) == 3:
         # (C, H, W) -> (H, W, C)
-        if input_shape[0] == 1:
-            # Grayscale for proper plt.imshow needs to be (H,W)
-            image = image.squeeze()
-        else:
-            image = image.transpose(1, 2, 0)
+        image = image.squeeze() if input_shape[0] == 1 else image.transpose(1, 2, 0)
     elif len(input_shape) == 4:
         # (B, C, H, W) -> (B, H, W, C)
         image = image.transpose(0, 2, 3, 1)

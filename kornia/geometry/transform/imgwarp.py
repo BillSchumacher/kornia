@@ -97,10 +97,10 @@ def warp_perspective(
     if not isinstance(M, Tensor):
         raise TypeError(f"Input M type is not a Tensor. Got {type(M)}")
 
-    if not len(src.shape) == 4:
+    if len(src.shape) != 4:
         raise ValueError(f"Input src must be a BxCxHxW tensor. Got {src.shape}")
 
-    if not (len(M.shape) == 3 and M.shape[-2:] == (3, 3)):
+    if len(M.shape) != 3 or M.shape[-2:] != (3, 3):
         raise ValueError(f"Input M must be a Bx3x3 tensor. Got {M.shape}")
 
     # fill padding is only supported for 3 channels because we can't set fill_value default
@@ -182,10 +182,10 @@ def warp_affine(
     if not isinstance(M, Tensor):
         raise TypeError(f"Input M type is not a Tensor. Got {type(M)}")
 
-    if not len(src.shape) == 4:
+    if len(src.shape) != 4:
         raise ValueError(f"Input src must be a BxCxHxW tensor. Got {src.shape}")
 
-    if not (len(M.shape) == 3 or M.shape[-2:] == (2, 3)):
+    if len(M.shape) != 3 and M.shape[-2:] != (2, 3):
         raise ValueError(f"Input M must be a Bx2x3 tensor. Got {M.shape}")
 
     # fill padding is only supported for 3 channels because we can't set fill_value default
@@ -421,27 +421,23 @@ def get_rotation_matrix2d(center: Tensor, angle: Tensor, scale: Tensor) -> Tenso
     if not isinstance(scale, Tensor):
         raise TypeError(f"Input scale type is not a Tensor. Got {type(scale)}")
 
-    if not (len(center.shape) == 2 and center.shape[1] == 2):
+    if len(center.shape) != 2 or center.shape[1] != 2:
         raise ValueError(f"Input center must be a Bx2 tensor. Got {center.shape}")
 
-    if not len(angle.shape) == 1:
+    if len(angle.shape) != 1:
         raise ValueError(f"Input angle must be a B tensor. Got {angle.shape}")
 
-    if not (len(scale.shape) == 2 and scale.shape[1] == 2):
+    if len(scale.shape) != 2 or scale.shape[1] != 2:
         raise ValueError(f"Input scale must be a Bx2 tensor. Got {scale.shape}")
 
     if not (center.shape[0] == angle.shape[0] == scale.shape[0]):
         raise ValueError(
-            "Inputs must have same batch size dimension. Got center {}, angle {} and scale {}".format(
-                center.shape, angle.shape, scale.shape
-            )
+            f"Inputs must have same batch size dimension. Got center {center.shape}, angle {angle.shape} and scale {scale.shape}"
         )
 
     if not (center.device == angle.device == scale.device) or not (center.dtype == angle.dtype == scale.dtype):
         raise ValueError(
-            "Inputs must have same device Got center ({}, {}), angle ({}, {}) and scale ({}, {})".format(
-                center.device, center.dtype, angle.device, angle.dtype, scale.device, scale.dtype
-            )
+            f"Inputs must have same device Got center ({center.device}, {center.dtype}), angle ({angle.device}, {angle.dtype}) and scale ({scale.device}, {scale.dtype})"
         )
 
     shift_m = eye_like(3, center)
@@ -557,7 +553,7 @@ def invert_affine_transform(matrix: Tensor) -> Tensor:
     if not isinstance(matrix, Tensor):
         raise TypeError(f"Input matrix type is not a Tensor. Got {type(matrix)}")
 
-    if not (len(matrix.shape) == 3 and matrix.shape[-2:] == (2, 3)):
+    if len(matrix.shape) != 3 or matrix.shape[-2:] != (2, 3):
         raise ValueError(f"Input matrix must be a Bx2x3 tensor. Got {matrix.shape}")
 
     matrix_tmp: Tensor = convert_affinematrix_to_homography(matrix)
@@ -835,7 +831,7 @@ def warp_affine3d(
     """
     if len(src.shape) != 5:
         raise AssertionError(src.shape)
-    if not (len(M.shape) == 3 and M.shape[-2:] == (3, 4)):
+    if len(M.shape) != 3 or M.shape[-2:] != (3, 4):
         raise AssertionError(M.shape)
     if len(dsize) != 3:
         raise AssertionError(dsize)
@@ -873,9 +869,9 @@ def projection_from_Rt(rmat: Tensor, tvec: Tensor) -> Tensor:
     Returns:
        the projection matrix with shape :math:`(*, 3, 4)`.
     """
-    if not (len(rmat.shape) >= 2 and rmat.shape[-2:] == (3, 3)):
+    if len(rmat.shape) < 2 or rmat.shape[-2:] != (3, 3):
         raise AssertionError(rmat.shape)
-    if not (len(tvec.shape) >= 2 and tvec.shape[-2:] == (3, 1)):
+    if len(tvec.shape) < 2 or tvec.shape[-2:] != (3, 1):
         raise AssertionError(tvec.shape)
 
     return concatenate([rmat, tvec], -1)  # Bx3x4
@@ -902,9 +898,9 @@ def get_projective_transform(center: Tensor, angles: Tensor, scales: Tensor) -> 
     .. note::
         This function is often used in conjunction with :func:`warp_affine3d`.
     """
-    if not (len(center.shape) == 2 and center.shape[-1] == 3):
+    if len(center.shape) != 2 or center.shape[-1] != 3:
         raise AssertionError(center.shape)
-    if not (len(angles.shape) == 2 and angles.shape[-1] == 3):
+    if len(angles.shape) != 2 or angles.shape[-1] != 3:
         raise AssertionError(angles.shape)
     if center.device != angles.device:
         raise AssertionError(center.device, angles.device)
@@ -1010,16 +1006,16 @@ def get_perspective_transform3d(src: Tensor, dst: Tensor) -> Tensor:
     if not isinstance(dst, (Tensor)):
         raise TypeError(f"Input type is not a Tensor. Got {type(dst)}")
 
-    if not src.shape[-2:] == (8, 3):
+    if src.shape[-2:] != (8, 3):
         raise ValueError(f"Inputs must be a Bx8x3 tensor. Got {src.shape}")
 
-    if not src.shape == dst.shape:
+    if src.shape != dst.shape:
         raise ValueError(f"Inputs must have the same shape. Got {dst.shape}")
 
-    if not (src.shape[0] == dst.shape[0]):
+    if src.shape[0] != dst.shape[0]:
         raise ValueError(f"Inputs must have same batch size dimension. Expect {src.shape} but got {dst.shape}")
 
-    if not (src.device == dst.device and src.dtype == dst.dtype):
+    if src.device != dst.device or src.dtype != dst.dtype:
         raise AssertionError(
             f"Expect `src` and `dst` to be in the same device (Got {src.dtype}, {dst.dtype}) "
             f"with the same dtype (Got {src.dtype}, {dst.dtype})."
@@ -1032,10 +1028,13 @@ def get_perspective_transform3d(src: Tensor, dst: Tensor) -> Tensor:
 
     # 000, 100, 110, 101, 011
     for i in [0, 1, 2, 5, 7]:
-        p.append(_build_perspective_param3d(src[:, i], dst[:, i], 'x'))
-        p.append(_build_perspective_param3d(src[:, i], dst[:, i], 'y'))
-        p.append(_build_perspective_param3d(src[:, i], dst[:, i], 'z'))
-
+        p.extend(
+            (
+                _build_perspective_param3d(src[:, i], dst[:, i], 'x'),
+                _build_perspective_param3d(src[:, i], dst[:, i], 'y'),
+                _build_perspective_param3d(src[:, i], dst[:, i], 'z'),
+            )
+        )
     # A is Bx15x15
     A = stack(p, 1)
 
@@ -1190,10 +1189,10 @@ def warp_perspective3d(
     if not isinstance(M, Tensor):
         raise TypeError(f"Input M type is not a Tensor. Got {type(M)}")
 
-    if not len(src.shape) == 5:
+    if len(src.shape) != 5:
         raise ValueError(f"Input src must be a BxCxDxHxW tensor. Got {src.shape}")
 
-    if not (len(M.shape) == 3 or M.shape[-2:] == (4, 4)):
+    if len(M.shape) != 3 and M.shape[-2:] != (4, 4):
         raise ValueError(f"Input M must be a Bx4x4 tensor. Got {M.shape}")
 
     # launches the warper
@@ -1242,7 +1241,7 @@ def homography_warp(
         >>> print(out.shape)
         torch.Size([1, 4, 4, 2])
     """
-    if not src_homo_dst.device == patch_src.device:
+    if src_homo_dst.device != patch_src.device:
         raise TypeError(
             "Patch and homography must be on the same device. \
                          Got patch.device: {} src_H_dst.device: {}.".format(
@@ -1307,7 +1306,7 @@ def homography_warp3d(
         >>> homography = torch.eye(3).view(1, 3, 3)
         >>> output = homography_warp(input, homography, (32, 32))
     """
-    if not src_homo_dst.device == patch_src.device:
+    if src_homo_dst.device != patch_src.device:
         raise TypeError(
             "Patch and homography must be on the same device. \
                          Got patch.device: {} src_H_dst.device: {}.".format(

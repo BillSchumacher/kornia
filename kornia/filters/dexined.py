@@ -113,9 +113,19 @@ class UpConvBlock(Module):
             kernel_size = 2**up_scale
             pad = all_pads[up_scale]  # kernel_size-1
             out_features = self.compute_out_features(i, up_scale)
-            layers.append(nn.Conv2d(in_features, out_features, 1))
-            layers.append(nn.ReLU(inplace=True))
-            layers.append(nn.ConvTranspose2d(out_features, out_features, kernel_size, stride=2, padding=pad))
+            layers.extend(
+                (
+                    nn.Conv2d(in_features, out_features, 1),
+                    nn.ReLU(inplace=True),
+                    nn.ConvTranspose2d(
+                        out_features,
+                        out_features,
+                        kernel_size,
+                        stride=2,
+                        padding=pad,
+                    ),
+                )
+            )
             in_features = out_features
         return layers
 

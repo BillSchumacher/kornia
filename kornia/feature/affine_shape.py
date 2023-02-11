@@ -20,8 +20,9 @@ from .laf import (
     set_laf_orientation,
 )
 
-urls: Dict[str, str] = {}
-urls["affnet"] = "https://github.com/ducha-aiki/affnet/raw/master/pretrained/AffNet.pth"
+urls: Dict[str, str] = {
+    "affnet": "https://github.com/ducha-aiki/affnet/raw/master/pretrained/AffNet.pth"
+}
 
 
 class PatchAffineShapeEstimator(nn.Module):

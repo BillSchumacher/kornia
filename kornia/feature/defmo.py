@@ -6,9 +6,10 @@ import torch.nn as nn
 from kornia.core import Module, Tensor, concatenate, stack
 from kornia.utils.helpers import map_location_to_cpu
 
-urls: Dict[str, str] = {}
-urls["defmo_encoder"] = "http://ptak.felk.cvut.cz/personal/rozumden/defmo_saved_models/encoder_best.pt"
-urls["defmo_rendering"] = "http://ptak.felk.cvut.cz/personal/rozumden/defmo_saved_models/rendering_best.pt"
+urls: Dict[str, str] = {
+    "defmo_encoder": "http://ptak.felk.cvut.cz/personal/rozumden/defmo_saved_models/encoder_best.pt",
+    "defmo_rendering": "http://ptak.felk.cvut.cz/personal/rozumden/defmo_saved_models/rendering_best.pt",
+}
 
 
 # conv1x1, conv3x3, Bottleneck, ResNet are taken from:
@@ -117,8 +118,7 @@ class ResNet(Module):
             replace_stride_with_dilation = [False, False, False]
         if len(replace_stride_with_dilation) != 3:
             raise ValueError(
-                "replace_stride_with_dilation should be None "
-                "or a 3-element tuple, got {}".format(replace_stride_with_dilation)
+                f"replace_stride_with_dilation should be None or a 3-element tuple, got {replace_stride_with_dilation}"
             )
         self.groups = groups
         self.base_width = width_per_group
@@ -162,25 +162,30 @@ class ResNet(Module):
                 conv1x1(self.inplanes, planes * block.expansion, stride), norm_layer(planes * block.expansion)
             )
 
-        layers = []
-        layers.append(
+        layers = [
             block(
-                self.inplanes, planes, stride, downsample, self.groups, self.base_width, previous_dilation, norm_layer
+                self.inplanes,
+                planes,
+                stride,
+                downsample,
+                self.groups,
+                self.base_width,
+                previous_dilation,
+                norm_layer,
             )
-        )
+        ]
         self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(
-                block(
-                    self.inplanes,
-                    planes,
-                    groups=self.groups,
-                    base_width=self.base_width,
-                    dilation=self.dilation,
-                    norm_layer=norm_layer,
-                )
+        layers.extend(
+            block(
+                self.inplanes,
+                planes,
+                groups=self.groups,
+                base_width=self.base_width,
+                dilation=self.dilation,
+                norm_layer=norm_layer,
             )
-
+            for _ in range(1, blocks)
+        )
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
@@ -246,9 +251,7 @@ class RenderingDeFMO(Module):
         renders = []
         for ki in range(times.shape[1]):
             t_tensor = (
-                # TODO: replace by after deprecate pytorch 1.6
-                # times[list(range(times.shape[0])), ki]
-                times[[x for x in range(times.shape[0])], ki]  # skipcq: PYL-R1721
+                times[list(range(times.shape[0])), ki]
                 .unsqueeze(-1)
                 .unsqueeze(-1)
                 .unsqueeze(-1)
@@ -302,5 +305,4 @@ class DeFMO(Module):
 
     def forward(self, input_data: Tensor) -> Tensor:
         latent = self.encoder(input_data)
-        x_out = self.rendering(latent)
-        return x_out
+        return self.rendering(latent)

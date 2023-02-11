@@ -56,10 +56,8 @@ class _BasicAugmentationBase(Module):
         self.same_on_batch = same_on_batch
         self.keepdim = keepdim
         self._params: Dict[str, Tensor] = {}
-        if p != 0.0 or p != 1.0:
-            self._p_gen = Bernoulli(self.p)
-        if p_batch != 0.0 or p_batch != 1.0:
-            self._p_batch_gen = Bernoulli(self.p_batch)
+        self._p_gen = Bernoulli(self.p)
+        self._p_batch_gen = Bernoulli(self.p_batch)
         self._param_generator: Optional[RandomGeneratorBase] = None
         self.flags: Dict[str, Any] = {}
         self.set_rng_device_and_dtype(torch.device('cpu'), torch.get_default_dtype())
@@ -71,10 +69,7 @@ class _BasicAugmentationBase(Module):
         if isinstance(self._param_generator, RandomGeneratorBase):
             txt = f"{str(self._param_generator)}, {txt}"
         for k, v in self.flags.items():
-            if isinstance(v, Enum):
-                txt += f", {k}={v.name.lower()}"
-            else:
-                txt += f", {k}={v}"
+            txt += f", {k}={v.name.lower()}" if isinstance(v, Enum) else f", {k}={v}"
         return f"{self.__class__.__name__}({txt})"
 
     def __unpack_input__(self, input: Tensor) -> Tensor:
@@ -136,7 +131,7 @@ class _BasicAugmentationBase(Module):
         self, params: Optional[Dict[str, Tensor]] = None, flags: Optional[Dict[str, Any]] = None, **kwargs
     ) -> Tuple[Dict[str, Tensor], Dict[str, Any]]:
         # NOTE: determine how to save self._params
-        save_kwargs = kwargs["save_kwargs"] if "save_kwargs" in kwargs else False
+        save_kwargs = kwargs.get("save_kwargs", False)
 
         params = self._params if params is None else params
         flags = self.flags if flags is None else flags
@@ -434,6 +429,4 @@ class _AugmentationBase(_BasicAugmentationBase):
         if flags is None:
             flags = self.flags
 
-        output = self.transform_inputs(in_tensor, params, flags)
-
-        return output
+        return self.transform_inputs(in_tensor, params, flags)

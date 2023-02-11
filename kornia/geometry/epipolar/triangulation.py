@@ -30,15 +30,15 @@ def triangulate_points(
     Returns:
         The reconstructed 3d points in the world frame with shape :math:`(*, N, 3)`.
     """
-    if not (len(P1.shape) >= 2 and P1.shape[-2:] == (3, 4)):
+    if len(P1.shape) < 2 or P1.shape[-2:] != (3, 4):
         raise AssertionError(P1.shape)
-    if not (len(P2.shape) >= 2 and P2.shape[-2:] == (3, 4)):
+    if len(P2.shape) < 2 or P2.shape[-2:] != (3, 4):
         raise AssertionError(P2.shape)
     if len(P1.shape[:-2]) != len(P2.shape[:-2]):
         raise AssertionError(P1.shape, P2.shape)
-    if not (len(points1.shape) >= 2 and points1.shape[-1] == 2):
+    if len(points1.shape) < 2 or points1.shape[-1] != 2:
         raise AssertionError(points1.shape)
-    if not (len(points2.shape) >= 2 and points2.shape[-1] == 2):
+    if len(points2.shape) < 2 or points2.shape[-1] != 2:
         raise AssertionError(points2.shape)
     if len(points1.shape[:-2]) != len(points2.shape[:-2]):
         raise AssertionError(points1.shape, points2.shape)

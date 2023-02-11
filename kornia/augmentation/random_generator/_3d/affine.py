@@ -95,8 +95,7 @@ class AffineGenerator3D(RandomGeneratorBase):
         self.scale = scale
 
     def __repr__(self) -> str:
-        repr = f"degrees={self.degrees}, shears={self.shears}, translate={self.translate}, scale={self.scale}"
-        return repr
+        return f"degrees={self.degrees}, shears={self.shears}, translate={self.translate}, scale={self.scale}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         degrees = _tuple_range_reader(self.degrees, 3, device, dtype)
@@ -145,12 +144,17 @@ class AffineGenerator3D(RandomGeneratorBase):
 
     def forward(self, batch_shape: torch.Size, same_on_batch: bool = False) -> Dict[str, torch.Tensor]:
         batch_size = batch_shape[0]
-        depth = batch_shape[-3]
         height = batch_shape[-2]
         width = batch_shape[-1]
 
-        if not (
-            type(depth) is int and depth > 0 and type(height) is int and height > 0 and type(width) is int and width > 0
+        depth = batch_shape[-3]
+        if (
+            type(depth) is not int
+            or depth <= 0
+            or type(height) is not int
+            or height <= 0
+            or type(width) is not int
+            or width <= 0
         ):
             raise AssertionError(f"'depth', 'height' and 'width' must be integers. Got {depth}, {height}, {width}.")
 

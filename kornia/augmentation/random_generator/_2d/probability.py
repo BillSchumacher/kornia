@@ -29,8 +29,7 @@ class ProbabilityGenerator(RandomGeneratorBase):
         self.p = p
 
     def __repr__(self) -> str:
-        repr = f"p={self.p}"
-        return repr
+        return f"p={self.p}"
 
     def make_samplers(self, device: torch.device, dtype: torch.dtype) -> None:
         p = torch.tensor(float(self.p), device=device, dtype=dtype)
@@ -69,7 +68,7 @@ def random_prob_generator(
     if not isinstance(p, (int, float)) or p > 1 or p < 0:
         raise TypeError(f"The probability should be a float number within [0, 1]. Got {type(p)}.")
 
-    _bernoulli = Bernoulli(tensor(float(p), device=device, dtype=dtype))
+    _bernoulli = Bernoulli(tensor(p, device=device, dtype=dtype))
     probs_mask: Tensor = _adapted_sampling((batch_size,), _bernoulli, same_on_batch).bool()
 
     return probs_mask

@@ -73,9 +73,9 @@ class RigidAffineAugmentationBase2D(AugmentationBase2D):
         to_apply = params['batch_prob']
         in_tensor = self.transform_tensor(input)
         if not to_apply.any():
-            trans_matrix = self.identity_matrix(in_tensor)
+            return self.identity_matrix(in_tensor)
         elif to_apply.all():
-            trans_matrix = self.compute_transformation(in_tensor, params=params, flags=flags)
+            return self.compute_transformation(in_tensor, params=params, flags=flags)
         else:
             trans_matrix_A = self.identity_matrix(in_tensor)
             trans_matrix_B = self.compute_transformation(in_tensor[to_apply], params=params, flags=flags)
@@ -84,9 +84,7 @@ class RigidAffineAugmentationBase2D(AugmentationBase2D):
                 trans_matrix_A = trans_matrix_A.type(input.dtype)
                 trans_matrix_B = trans_matrix_B.type(input.dtype)
 
-            trans_matrix = trans_matrix_A.index_put((to_apply,), trans_matrix_B)
-
-        return trans_matrix
+            return trans_matrix_A.index_put((to_apply,), trans_matrix_B)
 
     def inverse_inputs(
         self, input: Tensor, params: Dict[str, Tensor], flags: Dict[str, Any], transform: Optional[Tensor] = None

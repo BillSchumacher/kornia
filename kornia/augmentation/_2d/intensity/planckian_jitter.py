@@ -158,11 +158,7 @@ class RandomPlanckianJitter(IntensityAugmentationBase2D):
             select_from = [select_from]
 
         _pl = get_planckian_coeffs(mode)
-        if select_from is not None:
-            self.pl = _pl[select_from]
-        else:
-            self.pl = _pl
-
+        self.pl = _pl[select_from] if select_from is not None else _pl
         # the range of the sampling parameters
         _param_min: float = 0.0
         _param_max: float = float(self.pl.shape[0])
